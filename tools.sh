@@ -8,15 +8,12 @@ NC='\e[0m'
 green() { echo -e "\\033[32;1m${*}\\033[0m"; }
 red() { echo -e "\\033[31;1m${*}\\033[0m"; }
 W='\e[1;37m'
-green "            Menginstall tools!"
-sleep 0.5
-green "             Proses dimulai..."
-sleep 0.5
+echo -e " ${W}Menginstall tools penting!"
+echo -e " Proses dimulai...${NC}"
 apt update -y
 apt upgrade -y
 apt dist-upgrade -y
 apt install sudo -y
-apt install gnupg -y
 sudo apt-get clean all
 apt install -y debconf-utils
 apt-get remove --purge ufw firewalld -y

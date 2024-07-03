@@ -1,701 +1,208 @@
 #!/bin/bash
-clear
+#
+# This file encrypted at Wed 03 Jul 2024 02:36:58 PM WIB by
+# +------------------------------------------------------+
+# | Author  : RMBL VPN                                   
+# | Reguon  : Indonesia ( Asia Tenggara )                
+# | Telegram: https://t.me/rmblvpn1                      
+# +------------------------------------------------------+
+# Don't forget follow me on:
+# -  https://github.com/rmbl
+# Sponsor this project:
+# -  https://t.me/rmblvpn1
+# -  http://rmbl.my.id
 
-# warna hidup wkwkwk
-red='\e[1;31m'
-green='\e[0;32m'
-yell='\e[1;33m'
-C='\e[1;32m'
-G='\e[1;32m'
-N='\e[0m'
-W='\e[1;37m'
-purple() { echo -e "\\033[35;1m${*}\\033[0m"; }
-tyblue() { echo -e "\\033[36;1m${*}\\033[0m"; }
-yellow() { echo -e "\\033[33;1m${*}\\033[0m"; }
-green() { echo -e "\\033[32;1m${*}\\033[0m"; }
-red() { echo -e "\\033[31;1m${*}\\033[0m"; }
+skip=70
+tab='	'
+nl='
+'
+IFS=" $tab$nl"
 
-# REPOSITORY
-REPOKU="https://raw.githubusercontent.com/sengnawang"
-REPOSC="https://raw.githubusercontent.com/sengnawang/premium/main"
-# TELEGRAMKU
-CHATID="6447416716"
-TOKENBOT="6951295400:AAF8_cbbAezmjkC55ygrXPEAoabr7OWgbL8"
-# cek cek vps dulu kak
-cd /root
-if [ "${EUID}" -ne 0 ]; then
-    echo "You need to run this script as root"
-    exit 1
-fi
+# Ensure critical variables are present, especially when not defined by login(1)
+# Note: $USER may not always be executed (e.g., in containers)
+# Copyrighted code by @RMBL VPN / rmbl@rmbl.my.id
+USER=${USER:-$(id -u -n)}
+# Ensure critical variables are present, especially when not defined by login(1)
+# Note: $USER may not always be executed (e.g., in containers)
+# Copyrighted code by @RMBL VPN / rmbl@rmbl.my.id
+HOME="${HOME:-$(getent passwd $USER 2>/dev/null | cut -d: -f6)}"
+# PC does not have getent, but this works even if $HOME is unset
+HOME="${HOME:-$(eval echo ~$USER)}"
+umask=`umask`
+umask 77
 
-if [ "$(systemd-detect-virt)" == "openvz" ]; then
-    echo "OpenVZ is not supported"
-    exit 1
-fi
+shctmpdir=
+trap 'res=$?
+  test -n "$shctmpdir" && rm -fr "$shctmpdir"
+  (exit $res); exit $res
+' 0 1 2 3 5 10 13 15
 
-localip=$(hostname -I | cut -d\  -f1)
-hst=( `hostname` )
-dart=$(cat /etc/hosts | grep -w `hostname` | awk '{print $2}')
-if [[ "$hst" != "$dart" ]]; then
-    echo "$localip $(hostname)" >> /etc/hosts
-fi
+case $TMPDIR in
+  / | */tmp/) test -d "$TMPDIR" && test -w "$TMPDIR" && test -x "$TMPDIR" || TMPDIR=$HOME/.cache/; test -d "$HOME/.cache" && test -w "$HOME/.cache" && test -x "$HOME/.cache" || mkdir "$HOME/.cache";;
+  */tmp) TMPDIR=$TMPDIR/; test -d "$TMPDIR" && test -w "$TMPDIR" && test -x "$TMPDIR" || TMPDIR=$HOME/.cache/; test -d "$HOME/.cache" && test -w "$HOME/.cache" && test -x "$HOME/.cache" || mkdir "$HOME/.cache";;
+  *:* | *) TMPDIR=$HOME/.cache/; test -d "$HOME/.cache" && test -w "$HOME/.cache" && test -x "$HOME/.cache" || mkdir "$HOME/.cache";;
+esac
+if type mktemp >/dev/null 2>&1; then
+  shctmpdir=`mktemp -d "${TMPDIR}shctmpXXXXXXXXX"`
+else
+  shctmpdir=${TMPDIR}shctmp$$; mkdir $shctmpdir
+fi || { (exit 127); exit 127; }
 
-function STARTING() {
-    echo "Installation time : $(( ${1} / 3600 )) hours $(( (${1} / 60) % 60 )) minute's $(( ${1} % 60 )) seconds"
-}
-rm -rf /etc/rmbl
-mkdir -p /etc/rmbl
-mkdir -p /etc/rmbl/theme
-mkdir -p /var/lib/ >/dev/null 2>&1
-echo "IP=" >> /var/lib/ipvps.conf
-clear
-echo -e  "${C}â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”${N}"
-echo -e  "${C}â”‚${W}            MASUKKAN NAMA KAMU            ${C}â”‚${N}"
-echo -e  "${C}â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜${N}"
-echo " "
-until [[ $name =~ ^[a-zA-Z0-9_.-]+$ ]]; do
-    read -rp "Masukan Nama Kamu Disini tanpa spasi : " -e name
-done
-rm -rf /etc/profil
-echo "$name" > /etc/profil
-echo ""
-clear
-author=$(cat /etc/profil | awk '{print $1}')
-echo ""
-echo ""
-function isi_github_info(){
-matanah=$(wget -qO- https://pastebin.com/raw/ASigWhmd)
-echo -e "$matanah" > /etc/github/api
-echo -e "h@gmail.com" > /etc/github/email
-echo -e "celakgede" > /etc/github/username
-}
+shctmp=$shctmpdir/$0
+case $0 in
+-* | */*'
+') mkdir -p "$shctmp" && rm -r "$shctmp";;
+*/*) shctmp=$shctmpdir/`basename "$0"`;;
+esac || { (exit 127); exit 127; }
 
-function isikey(){
-    clear
-    echo -e "${C}â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”${N}"
-    echo -e "${C}â”‚${W}       MENU PILIHAN AKTIVASI SCRIPT       ${C}â”‚${N}"
-    echo -e "${C}â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜${N}"
-    echo -e "${C}â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”${N}"
-    echo -e "${C}â”‚                                          â”‚${N}"
-    echo -e "${C}â”‚${W}  [${C}01${W}] TRIAL 1 HARI                       ${C}â”‚${N}"
-    echo -e "${C}â”‚                                          â”‚${N}"
-    echo -e "${C}â”‚${W}  [${C}02${W}] MEMBER SUDAH BELI                  ${C}â”‚${N}"
-    echo -e "${C}â”‚                                          â”‚${N}"
-    echo -e "${C}â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜${N}"
-    until [[ $key =~ ^[12]+$ ]]; do
-        read -p "   Please select numbers 1 atau 2 : " key
-    done
-    if [[ $key == "1" ]]; then
-        MYIP=$(curl -sS ipv4.icanhazip.com)
-        rm -rf /etc/github
-        mkdir -p /etc/github
-        isi_github_info
-        clear
-        APIGIT=$(cat /etc/github/api)
-        EMAILGIT=$(cat /etc/github/email)
-        USERGIT=$(cat /etc/github/username)
-        hhari=$(date -d "1 days" +"%Y-%m-%d")
-        mkdir -p /root/rmbl
-        cd /root/rmbl
-        wget ${REPOKU}/permission/main/ipmini >/dev/null 2>&1
-        echo "### $author $hhari $MYIP @trial" >> ipmini
-        sleep 1
-        rm -rf .git
-        git config --global user.email "${EMAILGIT}" >/dev/null 2>&1
-        git config --global user.name "${USERGIT}" >/dev/null 2>&1
-        git init >/dev/null 2>&1
-        git add ipmini
-        git commit -m register >/dev/null 2>&1
-        git branch -M main >/dev/null 2>&1
-        git remote add origin https://github.com/${USERGIT}/permission >/dev/null 2>&1
-        git push -f https://${APIGIT}@github.com/${USERGIT}/permission >/dev/null 2>&1
-        sleep 1
-        rm -rf /root/rmbl
-        rm -rf /etc/github
-        clear
-    fi
-    if [[ $key == "2" ]]; then
-        clear
-        echo -e  "${C}â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”${N}"
-        echo -e  "${C}â”‚${W}           MASUKKAN KEY LICENSE           ${C}â”‚${N}"
-        echo -e  "${C}â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜${N}"
-        echo " "
-        read -rp " Masukan Key Kamu di sini (Ctrl + C Exit) : " -e kode
+case `printf 'X\n' | tail -n +1 2>/dev/null` in
+X) tail_n=-n;;
+*) tail_n=;;
+esac
+if tail $tail_n +$skip <"$0" | gpg -q --decrypt --batch --passphrase "Anjay password nya mana ðŸ˜‚ðŸ˜‚ðŸ˜‚ðŸ˜‚ðŸ˜‚ðŸ˜‚ðŸ˜‚ðŸ˜‚ Rasenggan (Ah lupa ga ada emot Rasenggan) pakai api aja dah ðŸ”¥ðŸ”¥ðŸ”¥ menyala abangkuh | Jr:4q:BX:z5:f5:1Y:9N:Pn:Rq:cZ:ym:Nd:T4:BW:Su:uz:je:UL:zL:XQ:mg:u1:So:K6:U1:M7:eh:Kx:bI:xV:2k:sD:fC:vr:7z:iA:FE:Ug:Xq:Dl:Ln:jt:rP:hP:m9:37:Jq:Vn:Ii:pD:jv:bT:gP:Yi:zx:g9:D5:qH:jP:M9:R7:mq:CM:Eh:I4:Ep:rT:Xo:mc:p7:bs:cO:YN:LX:ac:yh:Ju:nk:Dq:h5:DQ:GT:gC:iS:9G:gn:7p:uG:kq:0v:WC:ML:A4:ZB:mv:dQ:ea:X7:EP:V8:X5:GZ:PN:ix:qS:k1:Ss:wn:2g:Ue:HL:j6:J1:ti:EB:h6:xt:wJ:WS:16:2e:Ya:UZ:Er:oi:aa:UT:UX:kV:hw:1r:5J:7b:cm:Q3:BP:CE:0D:uW:C6:FD:Vt:V7:T9:Ww:9u:bo:aw:FI:bo:Dt:XK:ql:KA:dp:HG:U6:Sa:2v:Fk:bC:GF:6P:a3:dH:ZD:6w:y9:Dr:vN:fF:FI:nM:pS:Yd:ct:Dl:A4:UH:89:j1:MB:9B:Dr:Rj:LK:gu:oo:OW:gg:bt:E5:F5:QP:vB:pG:U2:Rh:3F:Uc:5W:0x:y7:NU:y7:cb:MO:f4:Am:Mv:ci:CY:ZC:Z8:lI:Iw:lE:ik:vk:ad:Rw:sh:GU:2t:N4:ni:SX:1y:pW:5p:0K:du:M5:8y:gq:lN:5f:G5:qe:Xi:Io:yA:1Y:La:l6:f7:RR:4H:ps:B7:zs:Bu:AU:jI:Kh:1I:mj:MC:9o:RN:OR:WX:E4:Aw:Ij:ay:x6:lZ:k3:O2:4f:5l:nx:Gn:RD:hu:Lr:H4:Ma:Dl:qL:Yo:ri:nY:F1:kS:UL:5c:eY:Gf:UC:fc:2t:fU:jI:CV:Ro:E7:RY:IW:Xd:XT:iA:r1:0Z:en:7t:Kc:n4:Rg:2I:Sr:3K:2Z:5S:Jl:rO:0t:ZT:Qx:44:mW:ck:8d:P9:Gy:Z2:AG:GJ:xR:JR:lg:b2:3S:B4:Yo:W7:PV:ES:4H:nd:F6:Uq:lX:IK:nl:uX:i0:sK:g2:yF:hD:af:rM:aE:Zg:2I:rW:pn:D6:Sj:Pj:LI:xH:ez:ds:iV:wP:vn:sD:kP:Vk:UI:3e:x8:EZ:Ya:Dl:HA:Ck:yC:Yu:Yc:M0:zG:Fx:qk:KC:We:Db:a9:k7:Dl:Fo:nh:q7:Q4:B7:Je:SF:je:eH:e2:YE:st:WM:pB:kZ:GH:rh:7O:63:qK:Jt:9H:oj:a2:Ec:1r:G1:Wm:aT:Np:Rw:2B:O6:4k:Um:gj:dw:Ap:Ua:Dy:wk:Aw:6f:Qd:ji:KJ:1F:5Y:W6:l2:IB:DD:CR:Le:5I:8H:Ma:Fj:VP:PV:ff:jK:gF:ZT:qK:oD:7h:cG:7C:JN:gW:1G:4L:8Z:M8:Oy:Nj:G7:cu:Mk:Hx:Yk:gu:Ht:n3:hn:lB:lg:Si:CD:a8:2y:Uu:I5:5e:H4:hf:3p:N2:47:Tm:Bh:jM:QZ:Tk:ib:4B:oA:gd:7j:1h:qb:YQ:Ow:zn:1Z:Q9:X8:AV:Py:Tg:fO:7M:LF:At:BH:OX:Z9:wj:nh:Bu:AY:vJ:Kf:Nl:m6:9h:An:Ju:TJ:xN:hB:JT:9G:bt:cR:1p:oC:Ay:hK:SW:Ra:AT:b8:A7:5e:OW:5M:fV:91:FH:dr:ZQ:sr:uN:eb:go:2T:x9:ZG:pB:0Y:4t:Ua:sN:9S:hu:Zn:zD:RP:Ay:HT:TX:OT:3C:LR:XH:xM:oI:ar:Qx:gG:mi:fw:Zm:xJ:6F:0L:hp:qo:J0:Yw:Dz:eW:6w:q4:K7:iz:9G:Qj:2A:uz:JG:h3:H2:kS:YP:NA:R8:NV:Qo:l8:Uj:g7:94:6v:Jw:tD:Su:m7:yP:YJ:Yy:yO:sL:El:Al:D5:uW:P9:og:Tm:MF:cW:8m:lT:vO:cY:8u:BZ:oK:J6:G2:V5:tW:Y7:wh:OP:c3:ZZ:vB:I4:L5:YY:KU:98:E3:vA:BJ:FJ:0Q:wq:px:xY:mq:Af:d7:Wg:6v:6f:HP:et:rB:Ej:d4:4K:Wc:am:ic:yf:44:CU:S7:DB:P3:W7:Of:Fu:DU:Dg:0q:1J:pY:2H:Aq:3x:VX:Tb:2V:VY:Sw:aR:W6:YI:ZN:Sn:oB:wm:gI:z5:9B:P2:PQ:is:A5:UW:X0:Bv:Be:eV:TF:Cz:hS:xr:W3:zS:ol:JA:tV:Xc:W5:uB:Fm:Uf:8N:HG:mL:Nl:gj:OY:TT:4m:LI:Km:Vs:Uo:4O:eL:uO:O2:2l:OG:Va:CQ:xj:T1:u2:9c:X4:Om:Ml:5g:cA:be:eZ:z0:ft:EW:3V:DU:cH:QG:cn:X6:XI:SS:Yi:am:8f:jU:ov:Qn:sr:mZ:1j:Z9:8B:Bh:UK:Ye:fL:CI:5I:FM:xW:IH:g9:D6:R3:pl:ID:ln:kw:92:ww:sJ:Cu:l2:8U:OL:gW:j2:Nw:8g:jZ:dX:q5:Tw:MD:zR:6M:a4:QJ:Ct:hD:5L:dX:bq:bS:Gc:Gw:13:CD:51:Hp:4f:NJ:F6:Ug:iG:uZ:mt:BT:vi:U2:h8:lj:Gq:I5:Wz:Hp:9O:1o:Gn:xv:Cd:eG:e2:Y5:fO:qX:yG:1l:F2:Jd:nh:cl:1n:VD:Oj:eG:zv:yJ:zA:1v:XO:ly:ne:zT:M0:J6:aL:D1:q1:gt:Dm:BO:HY:Wn:wV:Du:f7:Nt:y2:II:AL:PW:nX:aE:gp:qE:CC:M0:P0:r1:HF:8e:cL:VG:Vg:zo:Ll:SF:I0:8W:Aj:oa:7X:QE:YJ:Df:lM:QS:3G:lU:iM:sR:lq:vv:2k:vN:od:Hx:mi:ql:BK:v2:vN:Hs:jI:Nq:Yq:KA:xr:67:SN:U9:bg:6y:L9:8i:DI:Ve:nf:dl:9L:am:4O:Ju:O4:2k:5Q:bS:IA:P4:6x:J5:sM:d5:wv:Eo:kh:MF:yH:tu:vs:D8:dp:T8:fN:aC:MT:mp:DC:6p:Zz:xj:Ti:l1:mm:av:S1:NO:6k:OI:Ps:IH:td:N8:NF:8v:S9:s4:ln:9E:ZU:oY:bJ:OC:Gk:KE:HL:Im:1f:OX:Pc:u5:c0:xp:IS:JK:VA:Kn:ey:Xw:xW:An:EG:Qw:pc:ty:Zo:Yk:AP:2A:T7:YF:vg:F5:GJ:zR:wM:DD:hE:14:tt:aE:Cq:12:Pg:1S:dr:Sf:29:O7:Xf:A1:Nw:Ck:qU:20:CR:jz:s0:Tc:I2:hM:Sk:iw:px:Og:te:kv:Mw:Sh:5q:Kd:j9:SP:2Q:js:39:Vw:cW:Rq:YB:oH:Oa:9e:Hm:kB:hy:Ko:kP:L9:QT:4A:iK:j9:Gu:Or:2s:ru:qp:bX:Fm:ZA:hS:rS:YE:km:H5:sH:qC:1b:0E:Dw:Tp:Xy:oi:vK:vB:1K:8k:OS:TY:MS:Da:3H:xi:bX:jn:1D:9B:tY:gl:28:HI:Bg:Wu:Ss:CT:UY:DG:WF:zK:by:R0:ET:r7:JM:o2:JL:yw:db:Hk:aF:gP:mr:hj:IP:nn:rI:7l:qm:hC:XL:Jh:Cf:vV:Ah:1Z:D4:vB:Yc:2u:DT:vu:ZC:B5:vQ:eL:6O:lN:Ij:VX:Ba:hC:Lg:fD:Db:QO:s4:6O:Gy:PB:I5:cH:Wi:CR:as:DR:CV:At:JB:d0:iw:Ms:VH:XN:pJ:ac:6a:MW:K3:ON:pB:SE:OL:NK:Om:UF:c8:k9:gi:GS:DQ:3p:Ms:K5:Nd:fj:nU:EQ:2o:Oy:9F:jH:gb:J1:u5:0S:fP:iS:AV:5T:CD:jV:Pp:W2:Fn:h7:uU:rD:Ov:Pv:sj:b1:8v:d1:Nb:H3:yt:Ls:Lr:uz:X5:AO:4u:4s:br:8d:oU:3e:mi:4j:Fy:5Y:Dt:yD:Ol:cR:cD:JQ:zy:0c:rG:ke:nb:yJ:L5:kx:Ma:BK:as:VQ:Bz:xd:Gb:fN:L8:Og:8z:jj:Fu:8T:JD:eh:mF:50:6C:8Y:gd:4p:Dk:Vv:eA:Kk:Qv:lz:vb:qP:Bk:La:v6:Un:u2:xN:AJ:c6:DP:8r:UM:rx:E3:nA:Vb:W3:k6:iS:u5:Dt:Uj:rc:9i:S3:Dt:W3:zS:si:gX:Kr:kN:1h:GC:dK:pi:3j:XR:g5:ze:hW:NM:X0:lz:Yv:GJ:BY:mM:hE:n3:dB:le:3A:AY:tw:fY:Od:Jz:Ww:O9:YD:6T:gK:YQ:yn:bF:EB:sb:3r:40:IF:c3:2L:13:P1:Kj:sU:qB:6X:MS:51:ZU:Wt:NN:0i:XN:Wu:8U:kI:wp:Mu:wr:Jh:Jk:pE:Vw:CC:VN:q6:gR:Z6:ln:uY:Yj:De:Qs:E6:vr:1H:OE:Ou:tT:zv:aZ:Y1:YC:9i:3T:MD:Li:Ek:Mw:DU:ho:6R:sE:YZ:gV:IR:Ed:Kp:QH:r0:In:6q:s1:b9:ON:uo:55:VE:jZ:8x:VN:qZ:tY:eZ:df:Lx:pS:TJ:4b:Oi:Hz:UE:W8:hK:VE:uT:zt:LO:2L:BM:y2:U9:5V:hF:VS:Yv:jQ:f2:bv:iZ:Yo:CB:E6:oC:la:s8:KT:zD:VM:l1:Ve:Br:mB:J0:0L:2a:DA:2R:3T:Bs:ZX:4d:AT:5N:uU:6g:P0:Qn:L0:M2:DP:cY:pE:ee:EP:rW:ch:aK:Uw:P9:sH:hr:L9:fg:Qb:Ar:W3:B0:PT:kS:nn:vy:PQ:6A:A8:3F:tU:Rr:Gs:0X:qm:J2:m7:cG:kC:i1:Kw:S2:JW:V4:uS:rG:ci:Q2:GL:JU:SV:DZ:bk:mF:Aw:Kl:0Q:gk:Us:MF:cf:pm:Co:YC:zR:8m:E2:gP:lG:iI:aH:Sb:23:UW:zO:yU:AY:6l:b6:Cz:2H:Nu:mF:2i:TR:qC:yf:gX:jD:r1:x8:FY:W1:JV:dd:DV:je:Co:4u:jC:79:QF:sm:f0:Vt:96:x3:in:NP:Qu:UL:52:Rb:OM:mS:pv:BH:Dt:J3:19:5J:1Z:St:lc:iD:w8:hi:35:q9:QI:AQ:U8:bL:SY:US:kD:hK:Ki:OG:9X:gJ:lu:yh:1d:BX:Ig:wE:EZ:K4:sY:Sm:zT:kw:SC:tY:TW:W1:gZ:ps:8a:yU:N2:qb:PE:q4:W3:D1:W3:Xl:jM:52:GB:Kx:4f:Xp:y1:4X:V1:Ob:st:ku:kY:ue:0G:EQ:JM:Bw:sz:4g:WA:xG:k7:Em:0y:b0:wH:bL:Fy:VU:zB:1A:CK:Ss:ki:3F:Ju:hJ:8p:3p:pw:hX:5J:3Q:3I:7p:7z:Tl:D6:M0:Ls:jr:IL:eF:kT:YZ:xN:XY:S1:yu:mI:AJ:eM:8j:Zt:Zw:Pt:sN:7w:IA:Hy:ql:G6:hd:sP:z6:Ki:Ar:fR:nu:wu:aj:fc:Qo:wg:Ot:pj:D2:oG:Hr:UZ:D6:KW:tm:1w:Ee:wy:6x:oc:tX:PX:Mi:c4:vZ:cf:YH:3m:uD:EM:k7:TO:pt:l4:ti:jZ:PV:0Z:Ku:8s:pI:wj:6v:mV:I5:33:Ny:b2:28:Pq:Be:lO:Gl:Pt:In:hI:1L:MP:Nx:fy:y8:QX:vO:vB:WK:T0:eb:Cc:yQ:sS:xK:lm:iD:nI:GE:ux:jl:8R:9c:Pb:Ql:su:zp:ad:3s:pp:EZ:97:rS:DZ:Ut:jF:Vo:QU:Nh:De:PT:7a:AS:Sl:mc:0B:vV:K5:j3:wC:vS:yv:xk:3J:YX:0l:Qk:fD:xk:z9:tC:rz:4I:m9:1f:RF:z6:cx:UA:xs:Wb:IQ:g4:A1:Pl:02:bQ:rc:GH:Gq:AJ:Tw:bO:wq:wI:ev:T9:5L:60:r8:7X:yc:l0:O1:pC:Fb:CZ:72:PQ:oz:71:YH:nG:17:92:d4:91:JZ:cN:KL:zP:I2:Pz:3G:Ik:wA:PE:Xo:59:bb:q3:hG:lZ:Vo:WE:BV:SH:1e:2x:gr:3c:i2:Uf:fW:nu:UH:Zl:mx:6P:my:lm:q7:fe:ht:fn:4u:uc:sW:9m:MS:5w:S1:dI:RP:d7:mm:sf:Hy:sG:vH:JY:IJ:Mi:hf:Y1:0B:wl:0C:kN:6c:He:7T:5i:5o:vy:AU:EI:cW:e0:JC:gD:Ge:ox:C7:Vl:kB:bs:A6:hM:UD:0Y:dQ:sW:0r:jm:1r:yv:Kw:A3:xV:qt:oZ:O0:kw:yT:Tv:g6:ic:fJ:KA:tC:us:Mg:Ga:st:cc:vO:SF:0r:L3:bG:hW:6T:Aq:Wz:hU:75:Ik:uS:rt:Ue:yj:YP:4F:1o:nT:bO:SS:rc:ur:ZZ:zL:Us:bd:rY:CC:KH:S7:xt:WX:Fh:g4:5P:rU:tQ:TK:oy:uR:PX:2g:nB:jv:39:EO:oQ:eT:Hn:08:UO:T0:TV:EG:wJ:il:ES:HM:P7:g1:rn:YZ:nD:gb:sn:Ey:8r:0M:bd:U5:i5:oR:aa:pw:Da:os:6a:2m:Y7:bt:c0:uK:T3:oD:8Q:h3:8u:4v:S5:Bn:Yo:Gs:9C:Y9:7z:sG:n9:nY:zu:j6:Au:1s:RZ:na:sY:o9:t8:aC:zI:E6:7L:dF:fL:vu:LG:mF:jW:bQ:n7:cb:jg:CR:J2:OI:92:YP:sk:uK:hX:4q:h2:us:bC:Z8:34:PQ:Xw:bp:wq:ip:xQ:0T:8L:2P:bY:y3:Lb:E3:VB:Rc:xm:Vz:ck:cW:q8:8C:ZN:s9:jI:15:jG:c3:EY:Q6:xv:ll:m2:ZU:F2:3D:83:Af:zV:4N:mz:rA:2K:lE:yz:SI:hD:J3:F2:yj:YT:c5:67:lW:lp:TZ:TD:dP:0g:vc:ip:rq:QG:BS:9U:ll:y4:9J:uS:LN:6y:cW:zI:27:gP:RN:rW:e4:EV:Dt:Q4:nR:Jf:YJ:aE:hA:Yl:pW:oP:CR:Tr:mT:8Z:Vw:NV:4T:XE:b3:oE:Dw:Gt:ym:xo:xh:qL:mg:O3:cl:0G:Kc:JN:ZJ:dl:dc:BO:mM:mw:n5:3a:rD:LM:cS:d0:tu:pS:CC:i7:8i:dM:AZ:zQ:2D:w6:Ef:n3:Zr:Uo:TY:ra:aF:op:LE:H3:wi:uF:74:W2:je:Mm:8u:mr:Kz:Qk:rc:7k:uN:E6:1p:dM:Qo:ad:2j:Gl:Qg:dj:iL:gy:2V:lc:lg:0Q:tn:YS:WD:k7:mq:iB:0M:41:u0:L0:D6:yH:Ii:7n:ZB:4Z:RS:VO:KQ:AQ:Fa:Cz:KO:i2:Ez:FM:YH:g1:Uw:OB:N3:2T:OY:e6:1N:ED:Sv:2Q:vE:p7:vv:pC:Ms:H0:Y8:Wb:Ky:dD:I3:Q2:Gu:a7:jD:mu:py:BU:MA:RG:ca:sH:fc:8L:wd:K1:1V:gr:nk:uY:Qb:cD:QX:Tx:OK:B3:R2:xD:6V:hF:gH:tk:a8:Nt:oS:Dd:sr:zO:Ac:uM:hq:HM:cj:j3:9u:le:fe:dp:qZ:ts:en:4a:TF:dL:Zl:jp:IJ:dg:5d:uz:A2:GK:Ye:9S:mk:wJ:kB:ht:gA:l3:Tu:MD:bG:HI:wC:bt:CV:07:hm:B0:cF:Xe:Ax:ns:yo:iw:0L:ln:Bi:SK:2k:3X:dq:JA:BZ:Ov:Gc:xd:PB:hJ:jr:y6:bG:Wt:Lg:QS:vQ:OI:gM:Iv:ks:UE:lT:wQ:Pd:Zb:sx:pQ:rV:HU:hn:wg:ZL:ve:wc:sb:Fm:iT:MA:yx:zc:yL:ey:qD:WH:Y6:ou:wA:aA:rJ:N8:r8:kI:G0:fo:hW:Pb:vs:9y:O8:nN:IR:jh:vu:KP:Mg:R5:F0:0A:82:cK:u6:nq:8F:aV:NR:Qu:YK:Yn:fd:Ox:Bf:v7:Vz:Ct:YP:7Z:0e:Sa:qU:dK:wG:xp:nk:gZ:jw:Sd:iy:sp:kz:ob:C3:Rq:g5:rQ:1U:NV:jS:rf:FN:SV:Fr:OI:U6:nG:7U:nu:9G:vF:nc:EE:YX:io:7x:ke:AZ:h0:G2:4A:18:0P:9l:Ku:I3:f7:A2:4Z:wI:x3:SF:4I:DV:sF:ic:or:R9:Rv:3R:dv:ow:2a:jD:EB:bd:Bq:x6:zz:Ck:KA:2z:mI:R8:Uy:95:YD:tL:Od:uo:Mc:13:xd:N0:bN:Ig:sT:za:ng:jT:aX:En:f0:Sb:sH:3x:al:sc:Q3:Xp:YW:6H:ay:3h:s2:hw:0B:tp:OK:7e:U4:yo:pH:Cf:zk:AL:Uw:ft:BY:Hd:I5:68:pI:nF:2Z:Kg:nY:u5:I5:EW:kI:QH:dR:B5:k4:Sf:KR:Jn:5K:Ea:0L:B8:GP:Xm:g3:fD:yz:9Q:Ql:Rl:w8:0j:4o:iT:mO:Ab:Qw:l0:BF:9r:2k:32:JB:HR:f0:Fh:rj:hv:UB:8h:E5:NA:d6:hD:IF:7S:hC:QP:UE:hT:09:Hc:tw:CG:HP:ij:Ng:gr:kj:oU:mk:9q:m0:Ny:RL:qK:sV:eP:ku:gG:2P:Ca:pE:K6:cf:rH:7j:T9:EE:LD:bi:sN:na:zz:II:3g:HB:fw:1T:3R:HB:4l:i7:7Z:HE:tA:2o:XQ:gx:M2:J2:ca:fF:aD:ta:SB:6Z:LM:hc:6k:ju:uc:TX:TJ:2N:f3:iY:Gf:0V:i9:c5:Cm:gB:nK:0k:Hg:dD:2t:K0:9F:qz:zt:ul:0I:lV:ja:Px:iz:mI:4L:nO:E0:6W:Ir:9w:71:30:RA:hF:Vq:2m:OO:Yl:T1:I5:4R:kd:dv:kk:UA:cu:Vw:c2:Da:sT:Nx:2R:VB:ec:dN:yu:vd:m0:4J:Lf:jM:RL:dL:Ht:d8:6K:83:hR:z0:Kk:Dq:UM:1K:rt:kj:VU:eq:J7:F5:Mm:Gb:1U:Vz:8g:ZY:yx:ku:RB:F1:h7:Q8:qP:m9:nL:TN:2U:4j:L8:xN:NQ:xg:WO:lv:j3:fz:b7:Wn:Yf:N3:CS:Za:r6:7J:1I:pb:yv:fN:Ln:u6:pE:n9:CY:MY:ts:5i:BY:2d:J0:Jk:Xm:bS:Qv:86:2y:a1:4V:7x:YJ:d8:mM:Gq:mc:kT:sz:1Y:eh:K0:UJ:o3:eG:yE:mk:tM:Gv:fD:Oz:6d:2N:Ck:8F:BF:qm:SP:dq:2j:oC:FA:Hb:4J:6C:ZJ:Ij:EF:A6:Ni:sV:0Z:kN:KC:oQ:p9:Zb:gY:ee:bk:3c:nS:lV:VT:k9:19:ws:bC:el:oh:bY:MW:cg:A7:Dv:xZ:4s:7N:La:pE:76:CK:sj:88:FI:5G:pA:Ie:xZ:1j:Oe:WR:zw:hM:8G:ch:Z3:PO:ZD:ey:jO:QS:pn:iy:JV:Pm:sf:We:94:H2:1P:Ui:q4:YR:XE:OB:oA:cM:sq:8g:Ah:6z:bY:Og:Bu:gj:lv:Uw:El:mu:ia:PU:6i:Jg:6I:Al:rU:K4:uD:da:bW:ts:af:3Y:Vf:af:i7:Ad:fB:1b:I9:lW:PF:B0:8I:AL:rd:df:co:1Z:Z4:XQ:cW:jc:x3:BT:9T:e6:HE:XA:jA:Ap:vp:Q4:i3:2k:mc:Al:J3:EJ:oF:j9:fO:Nq:RT:OG:Mh:tc:4T:yP:aQ:MV:Av:O3:xu:eN:nZ:9h:Z7:R3:7M:sT:t9:ZK:fW:r1:VA:2g:Dn:le:QS:nC:Gf:ow:ac:kn:st:1m:R6:Fr:5D:vW:q0:Z9:8z:9X:Ih:s5:2y:hd:sc:ep:he:4i:Cl:Wz:sC:1G:k2:Yo:5c:xf:xs:lL:js:Aq:BJ:Uu:ML:no:CG:TC:UL:nv:pi:FU:aL:l6:GU:B2:wU:Cw:P9:3i:3r:9Z:KR:2s:EF:7r:n2:Eh:wj:cd:HU:v9:0m:Cz:05:Co:7i:mj:aG:YV:Mc:uG:dJ:dF:pF:JC:X1:Bv:lW:aI:H7:Zx:60:um:KN:DK:nd:M3:1S:o9:M4:LK:Qm:Ny:nW:n8:pN:RV:7i:C6:bt:bO:8b:ZX:nV:wG:Bx:Rb:L9:Rh:Jd:s8:k7:PA:Yo:Ce:if:Rn:UG:cT:lr:ko:Vg:cQ:2x:24:Nh:8R:3d:ic:o3:NA:2k:BI:nB:pR:Rf:RA:e0:gC:t7:yx:Qe:7L:hd:BX:o9:Oe:Uf:eK:2q:Bf:e1:hb:VU:3z:LA:2U:5G:rP:bw:QR:uq:Jv:FN:km:Y4:Ks:xa:cF:ad:m0:ky:zA:jt:tU:Kn:3K:Iw:qx:Cr:pJ:Ah:cA:rA:cp:fr:Ev:p0:II:bn:lT:41:Th:bB:kZ:RC:jH:M2:Qg:jP:tI:lR:6g:1B:tN:uS:uE:Y9:5l:P8:09:hP:nK:sT:wI:eM:Yg:u6:JD:HI:xY:QG:Dt:YJ:sL:z7:6W:o1:Mr:s1:6y:U2:hv:Zb:sT:AA:UD:rz:Th:wu:6f:Fl:u7:dH:xq:ew:qc:dt:dH:0C:rN:oi:iG:4R:NF:w2:ff:eo:y1:Oi:63:tI:1I:dA:H8:UT:TF:sw:nV:6Y:DX:qM:gT:tA:9n:LA:4p:hG:kr:Ug:V8:9V:TZ:vj:Sw:Kp:oB:UI:TE:S1:VW:hB:gz:E3:uC:sD:hP:Ny:y2:yi:3F:pN:tI:Cp:hw:Dy:IT:K5:Ov:hC:cM:o9:Ve:xG:cB:b6:qX:JD:zy:4e:M7:gZ:Ml:HC:9r:od:Aj:LF:xb:EA:E1:Bu:Hj:wu:5p:Dd:Ef:lU:NV:5Q:pt:MG:kt:pO:rc:BR:eF:Wo:tU:3t:Uk:Xk:47:ec:ia:mm:Ku:qd:Lo:Vy:Po:L7:wk:ON:PG:57:FC:43:XL:sa:Nx:Zj:Km:kG:Xd:U1:Qc:42:Bx:Vi:br:03:MG:wp:7x:3l:o1:ZN:Ok:J7:at:2J:iJ:LN:43:NI:R9:iW:As:Bd:O1:KI:4m:eO:3M:aV:Oj:3o:fs:tj:ea:fi:Ju:ao:Ag:Vo:Nx:dh:Ld:dj:t4:ai:5T:cD:zX:Ea:r5:rD:45:qY:MH:JQ:TB:t2:Fc:Zk:Yy:R9:FB:SY:Qt:mC:Gf:xD:TT:L9:kC:Jg:Nr:UI:YF:Rl:b2:bj:Hs:Mb:kp:vR:nw:cz:gu:lX:I7:Wq:BF:Uz:2S:0k:UD:iN:Am:Y7:0s:ii:cM:SR:0b:pu:MA:nX:TF:ps:ye:UO:nW:oX:B7:9b:Kg:AW:zW:QT:jp:m4:GO:lA:le:Sr:hU:D9:nk:9n:i5:PF:iF:Wb:Ee:Jo:jO:OW:A8:Dp:dj:el:fo:w8:GY:mN:NY:ZV:vz:JH:wa:eH:mv:Ly:Nf:le:fv:tL:PM:kx:4v:aQ:7S:ys:P1:sb:lM:gL:iI:Yh:a4:IV:RN:0L:hf:PG:FU:Cy:pU:HS:ya:tv:wh:4b:fR:hL:5E:fO:16:xb:c9:RF:HI:tR:IL:Nq:HR:VB:49:7l:gd:Uj:4q:ey:gv:Ka:nb:fN:rX:Qu:2E:90:YY:nH:XU:0Q:FI:da:1p:FM:t9:aj:nn:59:cO:xr:dX:cn:pc:cj:3M:lJ:o7:aE:Dp:Dh:SU:P9:kK:lf:52:qc:QZ:5M:Zc:EI:6F:BH:D6:bd:Yl:A4:bw:Wx:id:pU:Gp:Ln:7k:nI:G8:uQ:VY:Ek:m2:tm:FZ:bX:66:HK:Xq:c9:o1:TC:33:VZ:Mo:yr:li:mf:iL:ib:k6:Bu:oB:MD:nl:vM:O1:Ut:A0:nr:Cn:0F:TD:oR:6o:qw:To:6G:h1:Cd:MV:ON:O3:aM:c3:dG:Mg:JN:e3:sq:A6:VX:eO:EX:OW:s4:iE:dr:Rs:6Z:5p:46:oX:bz:3M:VN:8n:w6:AE:f7:i5:HQ:yz:tx:y7:0K:wW:fN:E9:Ey:c5:ht:wd:nB:Z0:Nz:Yw:Bo:8U:43:m3:EJ:Or:Vl:Z9:5W:D9:xZ:MC:wl:zW:K0:8F:A7:ZQ:Yl:9T:OK:HD:G6:d3:rF:T6:jQ:WW:jG:jQ:Je:dt:A7:1c:GC:wk:lx:49:ZD:ek:I8:Pd:Si:RV:K8:Yr:8m:Vu:pC:P0:jD:xG:Ez:tT:Ml:v9:FH:dc:SO:Dq:XY:nw:DU:Y5:Gt:ay:o0:OH:rM:Lf:Z9:sf:QI:pz:Kh:ex:3b:P0:Ff:Ux:J6:Y6:pK:pP:3I:5h:e8:Ee:uw:ga:SU:aQ:qi:77:4N:aV:3i:N9:xV:gl:0J:2H:Nb:Bn:EU:c9:ZP:Pv:Tu:99:p9:mW:I8:Dw:mc:TH:jo:ca:Bb:9A:w2:0c:85:uq:L9:Bs:64:D3:k9:Wv:gS:b9:Eg:gU:iV:ok:ZD:pX:Q9:ap:DL:cs:nT:I2:k3:KA:HK:Sa:VA:iQ:YT:NI:7N:lz:Ad:Dw:GK:DM:ml:4y:Jo:te:xi:Oh:qb:R6:BA:BB:Vw:ft:dj:lR:BW:l4:hB:Md:wV:08:zm:15:Za:sp:jx:Jr:F6:AU:1s:ld:Gk:3a:Lq:OY:OL:gw:23:KX:kE:aX:ek:bp:l2:Vm:Ec:JU:GL:t5:zG:T0:0N:US:7M:QC:3t:1P:55:MH:VT:PN:3v:4t:Fa:1n:MO:ma:ml:VB:XN:BY:wa:6X:H8:oz:6q:BA:Wy:zp:Kr:Wu:Ty:ZC:zy:hH:jI:hz:C6:KQ:Zz:nP:sn:2Y:2O:Tb:E2:Am:Co:xo:4h:7U:73:xT:A8:uF:V8:QO:vd:p3:Pv:JW:jl:Ng:zU:l8:3a:NM:cC:eA:vy:9K:Ev:T2:tu:px:BD:Tf:Gi:YJ:Ew:Fx:dk:kL:bb:n6:MF:ZB:eu:uj:Aq:Ru:F2:8B:Rr:r6:ih:Yy:8w:ye:vA:zh:3v:RW:IN:SN:nS:9u:fY:Ri:Ln:F9:y4:NN:QY:EB:WH:Cp:5w:aF:WM:O4:UF:UX:rb:6N:2c:vP:9c:Vm:jD:x2:ZT:q9:WZ:rM:Xh:l7:Mc:sN:Tz:OX:4i:DC:yM:jT:n1:5Z:DJ:1J:up:fK:ub:Y9:ut:IM:4J:Np:RZ:aN:k8:qW:sX:JL:Iu:vs:md:1D:Jy:7A:hU:JM:k4:Hb:Aj:Mu:Bg:Ob:kH:S2:gj:SA:4o:O2:i6:qK:d5:4B:Tc:sg:Eo:dq:EZ:Wf:Fz:6d:ul:wO:dO:c1:X4:tt:Mc:27:1S:bY:Sb:y5:uo:Z2:1Z:8A:54:hB:xu:Dt:c8:zo:gl:cw:DX:ed:kx:oW:jR:lu:XT:BD:A4:iR:YU:9p:DV:Px:R0:q9:cY:Jj:mP:Ja:MG:MP:Xe:RO:Wc:8w:KR:nt:Qj:Ev:yc:zH:cd:s8:nA:S8:dD:Qm:RD:mt:lu:7N:DE:37:gC:rX:w2:eB:g8:6Q:On:Kj:vH:35:Nz:41:qt:mf:ck:zm:7r:P8:pI:bi:KT:oY:cy:fX:3Q:xo:i7:ie:YH:sc:vd:xC:s9:CH:WL:TS:hj:jH:Lw:Pa:qf:xo:xK:EB:wZ:l9:w4:TH:mP:ri:1r:JS:AX:bW:cJ:zQ:bg:eU:DL:u1: | RMBL | RMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBLRMBL $ | RMBL" > "$shctmp"; then  umask $umask
+  chmod 700 "$shctmp"
+  (sleep 5; rm -fr "$shctmpdir") 2>/dev/null &
+  "$shctmp" ${1+"$@"}; res=$?
+else
+  printf >&2 '%s\n%s\n' "Cannot decompress ${0##*/}" "Report bugs to <rmbl@rmbl.my.id>."
+  (exit 127); res=127
+fi; exit $res
+Œ	iD¹)UÿÒíâÄ¬p`|zn¶R<|p$rðV|Á9µòDeó¿óêÏÑ.<ë/±©H83½{ìí2¶)löY²ž?®höfÕ$hë¦žêZ¢Èª‘è?\;¿¬l‹âou@ÆÎkÕÜ¡œÈÝ×ø½"wÆÜ‰cŽÈ„6âHup-ý¼SÒS}ê5`ëŽ/ŸUZ&é¤§ZQ|Ë“ÞŽuŽuÔ®$ûaÙ|cõCñdâ¸¡P¬ùåe^Íó5Êå…ÁÖ¬§Ý™ÏÈ7§?ç³¥ý1Åo|åhëDìí_¿"7
+T‘jÓ °ð¢ƒå9KRè2Ÿãñ£T”2nÛpÎ»jƒŒz¤ÝuÕè«3ÖDÔ0H´ÕýÜPÎ])úmÄK*9õF8´©Tø›ðÜÓÙ	ýš¢;Äƒ`7Ÿ°B†pR‘~`÷ï.É9˜y4‘hôˆÒ¿
+ÚSÊô—I\$–`n^%ºò²¶JÉ<$‘jÃð~ÞžÏÑ<¥®r„ö€~gžÊÙ˜ðoT”ØÇ¯Ãhrs–À]_u±àŸç¶˜ÓCa@ý
+èƒð—3ÐYæ4MÊjý÷á¥CàæâÇÖ÷Ç¶/¦úS…ÞhÃ‚ÆåL:Ã<s¢¼ò#°k?t$IGWt¹®`H Áâæ<šÔ±[ÛBÿÓYzR¢—úÇ.Å¿?)pªÛƒ‚‘€àÔ‹P&2…5¡Gö!Þ_{	·ÒÔ}Nò±»L2R”ž)B³n ?|ïÏû’Ä¥­æ™e×H>g	|mÐÂã£§­¡Ñxß‡Ëd4·Þé«³ç§#O–Èvý¸}¸:ÏE¶|~Ö^Å“gŒbƒ(Ñ¥•JºU[„éÙˆÞWœÉ—F; €ÆQ¡´®1p@úd“Ð3Àö%t¡nRMþP_(öÄŒÐ”ŒœBWó?°ÏJ~‡ ¿s4ª)l(CY½+’Â²ò‹²Ž†îuù9Vœ±™72çUœæ•3—™¥Ñ7ôvý¹ÑbË¨a€P§ŸC¢KÆGøóûaË\œ÷èƒeIð…Ê^Áß|7ÔøAë1æ1‰´3¢p¶Ó Z«ìËeë ü=mË8WÍî¾ÕŸL´”Ý¿7í¬c|~©R—žˆ€Z„làaÈÁwƒ(ä™9Ižhv¼4o-‘F»¡ëZÉÄÒ‘¦ƒ§( »enå±hï•I©zažà;á;¾S—ÔÒÝiXð1½æ<=%Ôµ7pt¸¹Õ4Êù‡DÉË’µÂTO³W\Þî0>F¹ŠÊNøâ¦°õHcPµ@–L×~×`½JJsÕÒj¤óßH—$Ít’Y!=VÏ V`2§ÿP
+©7ÚZ•ê?À1(^`Xÿ4•üƒ|áBWË‚¯:Š-ÔbSGÓtÝ†~§	=åU?ÚŒ_òh<i.užÇÑßE‘¾„”u”â ¬–íŽxïÊiYñC ¢(Þ?¨y–•§L«A¡N3Ÿ{Çþ“}%ò_AAÌ8XLvÕy_‰¹•h½ï|à¥iZØã“£#ôXXê‘tçå¹šäïVFû`a)#¿SÔÑ–_Ãõn¤ÉÂý"Ë!—|ÌžË0šÒ[.–t;í&ý·;b2ê÷õà’hy³³¯|Æ÷Š1ÛDüØ[º*“=u'w©Øw=ÔòC¹°z'Ÿ`—ßVÙ Xy‚-ënYÙÉ5 ˆhW*|”Þ÷ÚÔóÃ ÆUá@%WaÓ9ë_I3wHÿ_'¢ù«ÓËae¯ç(…BÄŽ9˜—¶
+vh8²U ›õÝð4Î ‹oÕ+¸Œäp‚áœ"Pc4¦”àÖûç×y£ï®¨!ÖOîÄõ÷ÃY$?¨“Öô¿Î¡I$#Ôs_nü ¶[adäh˜’Ñwr4¼éòáaú¯
+î~®Ù£\`ÝE!±¡n@ÅBTäjòxLˆŽßÈRÞçhë½ÎI6x¨Ôè q" þkQ°µD¿T.»&Æö\eh›ËÌ&FïeVp&ó»Ö@ñ2ÝZ½JA‚*|À>®jÐµFÍET“éC²W&UÔWˆŠ"bó(ï\Ó‰ý~HPb±1oH}zÜóÆ¾ÐÛÎÓïºÔH•<]ë(´QºÝGu ×/–%|X6í}Ã÷”NÚjŠk0QŽì¬‚õÍ‚³.›‚ÄFžr×ßJ…`FCWÌ:x];?ËB‚AL3E9!L	78
+¢i¡„àœ“ñ‹ˆˆø:!ÔœltK]O+A>.UÂ6×BêM_1—ˆ}G’#jië?Ióš~AœÀ<©áæBºä.ŒzÜ4†·ZIT»ææ9£Æk±*ôxT°?‚uÕ1³Õëÿ%Ç¤7ÕDJ¿‰ßA
+²ÀšÓl‚ÜÐ»Ùà”Xj#¨bgrX#Î¢æÿÊXiOgPHöB¥Î÷¬üÅfìÖyÀÀŠÏìdl£€=–û#Å¬_)SŠá[b f|KJÅp"Wg ¯Þü»ÐðWdKŒXã(tÁJßŠPµôMùS2#á
+^]a§Hâ“Ê 	ö""ç~àç5–Ã›\Áá”köŽ§¼S|e¹2£—C?.õ'©4.AÛ6ñÌÔ¹Íæy/k×6ö}AÞO†yòÜäjà~Å^^ÍÐÌ3õ‘ìó“¡štÙ£„‚llVÊ(lSP‹oÚFµB(ôˆq™ê©ó²Î¦½ø¬Ò[c8<G  m8®]Ù”±…E²t8¼å…¡JKŠ«f[ Ó@¹¯ÝY08ìÂ[Ôq*p‹sxÑY†¦íÒ_ª`·?uT0-q"ïô9Ë‚l®ÞSùÏEä«ˆŸhbÅ¤1\Ô:èœ9¥—€Ï¢®º“saƒ­­ ïø§G¿Ny9dpb¿¦úù¿)>@ÁŽ–6»òKÚü›ÐPMõ45‘ü0#û'‡³	ü*¯Í”»ZOÝò¢9gE	-°ÚiYS±EdnÿœÕ”UdR¡½›NµŒ	´ùµU†?žT~{ÊËð%Q¤êœhã÷Â¾Ì~Í2Þït%_¼%%‡tŸ"ïÈ×‹ôãêT^îÈÔÀA©3ãÔ£ÅMÁå:RùfñËxÒIž“aá|dõ ”äÂCDX’Oo#q¹@|ð—zÌ9Oùª=ùé©o/Š52!Cþ¯³‰ì` YZiÃ0gf\qí+)Èü™Ež‰ö‚1Ñ2(<£mjîÒZ½júÀ¦¾Q¾îWGY•F
+u»kv°=koÛèVÀ_¤¶yˆ¬‹I¹|çÖpìÈ|/ãì‡Ìéš¬f~rŽš£ˆ0©zíhî—5!¸ú>ùhÀûKî¾nÂÔ—FŒR¿æÿð;…œ­zl#ýaëHËÏ%õZ#kÔ©)ÖV×Šóz4á.áûVOàJSã›³ŠµFó+_wÉñÁ=¼•v0y¥·3ç‹P
+´LèP+º‚Ð¿yÞ‡:O³‘2|AêÔš?—SF›Qœäž|Ÿ—Îéç€OHÈHpaÝsù$kn=4›ìq ëÕñ°Âèp„Âèó]„<%41|£9p)/ÂÐä‹V§ö”î¸|ø@¤ƒ;ÊAAÙ_3x“@U<÷KAà‘ŽÇbmýàîB%èïÚí:´%^—7«¸Ž3Ê%¢Ö¸è7;Õ;¡zÒO™¯­ßs@	/wÿÜ3­Š~–s±»9
+æ¨T›¶Æ«”ôîî$¬py|z‡ô7ÿmö`¥í£Û§ZA  ¶ì
+‘7‰B¶ <[?(Ó5<«PÑu#p¦ëSd²uæOÅXLZ0[vîZQfÏ0«g¾ë±_mhEÒÏÆç¶nb‰’Ã|<ÄÅÓ­XÛRÝíÀ+6 £ ÕÿÎ+g½)Äø£w¶’£CQËÁ™ 7Ÿœ˜.Ü'ïQ2µ¢§Z¯¿ä½JGÉÎ–•Ä¾„E]¸gë9G¶ASX\`ÇM1w½åœäX8n?d7î‡ËÝðºôè±úŒµÀ7®—·4pÁ %­v9÷•Q¢]ihÉ&‘¢·þ§¢…Œô¹/”¾€@q]‹$ÄEPå®À´nƒxkŸi8RëÆi·‹6jq…›B^ü•¿iBÝNábÐãâ|I7À‚«=¿¿Qzp­ŸÂëÜ¬KáSïeÏï%s{´èL½_h¦V–©¤§ï‡©:~ïñ¢×¯«²Ê¼Œ¾yXD.9³‰9¶»m®{»u4?‡¸·/ûI;1cµA›ÝÇ|	·øÔLJÚ¦ÃjæRÞCU^“kôgÑ¥—è“Æúdä×d‰t©*·;iÕøåKÚècÚDÉÆ2y¶eýõ<=ý«P›™ZyzðS ÂšÍhÀFÌaõË{cþL€ÏÞ}ñø>Û´¨²êÏÕ—jS¿æzJýA¢¨çÒ“Ðœ¿ãg¾¾=ØdÁƒbÿ:ÿi<‡çŽœ=|A­P¤Pm™È¿•‚rÜ²Êo–ënkÁbwsGÏ=Í\J¢;PhV#uZ¿¨®ó Chä£2åCÁOˆ¨¤?©äÊÖRä¦agëÏAËq¡¸F¡ºnÎ_Š£÷–uHÐPµú™PY6-
+¢Bq`²1¬žæfëS 9Äé·Þ©gh‡•åª£¹(^¬~ÝA,qç/PF.o	tR4GôVîTeg×¢öz."‡¿&[d6¤åó({JË\+ÇÒÍ¶/×	ž•>A;›:*a¾™=¹G8ÅúÖôºŸ]ºR÷Öðù‹!è¦üÞ¡¯™G§²Ý´êå@7×<¾„+«ì4¿UC‚¢}ÓÂös9ßJMÉ!†öëU1[\Ùš"¬Âˆ8FOúy3ñÛâê(m& >â“sVË!(g,Vm€eã$a2]Ãg+(Ô	ïðcÃS‡/ô‡Ö_æ;—³îF^[+f>•Õ/QnÑüÛÑ1»RjÃpÖCŠ +0¼NâWyA&Tâ5KN&VCécš*Ìr¨(õMºú?C=nÇ³å‡›+Zã4ì©r—ÚàzÏ}'ë“'þM“
+ÿÓœjßdz;®Ô…	=ElCðÈÎ¤WÉ{?Tóo¨‚cj2ò)m˜ Qå²ÒêÒ©	åp;1µ‡Ãzß­þ3z·GöûÑð" TW¾}¾x“èœ¡_˜ã*™›V­÷Ù¾Y•Cå‰R®ŸUg6VòŠßyµé¥ŸJ¸ìb€Ãð{;ØZ„ í{_ó‘.¦êówf}ÿ@Ö“
+Ô°H`S”‚oVS¼|äôÉ ˆµ€µr¤Öê¾BÊ40‡¨–üzEÞòÃIºÆÌì‡S¿Åï$¾\ÄïïHXwÏµªÈ³àrVã`@r¹P†ÏLvé
+²ô°pD6 ºÙìùrœ¨O\&:Øñ¾À¨˜ê¤UQ@›Vâ÷fY›×rÞ7y~NºO×û¢{£öYÁ¾¡Šwì”Çàd?6StþoZ——ˆ²9·ì·¸OÏ*£Íé$ws2bÓ £2Š%$ó	‹‡\JD÷æu”b±QŒÝê­´áOeí!‚n›šÞÄ¤¦ÒŸI
+`}‡naMq[r•×`œ")í K…·ö4Ý“º¤ègDYQ]U°Èñ$Rs«“^ÒùN(ºi¬Fç-—;À=’ànžh	á-º&8"cÚ}iX¼Â#Ô’åg3»6–c+cé™s¨`Ýl´wâéÐò¦rýù†«ÝDHÙ
+ávJ9ëþ&§c¥íI’cÎÜÁíW…%š»éM¿mé1ˆžõ9ó´Bá¥›ü›B¤Í`™—ˆ»G?ôªàè82|˜gäþyeéäæ¹T#N>æ\ÄÚm!°Ùaß‡Õß_…Òcé‘®ðFÎÿßì&ÍÃÛ
+¢€…zŠÙë /›ÔÖœIà÷cž.Sgò©»zü”‹E%Aúà¯NÑ!’?ô Ò- ®)¸
+ŽÏoY‡fùk?¬RBù•‚òO®m[“½c ž€õ¢uªÝùxLÎ6UiH¿ÑpÉ|4¥ ¬ƒÜ¯ü>KÊö÷}~8‚J´„-?'.™ØJÃrÜªšÌÕÆP6
+…HŽlÿ%~?¼ctyæ1SAºØ—"Ÿ<3IX¸@R%Öá‰,öÝÌt3[²ZbÀ©%zëJYHp>ãßÂð&¨!Lù{QW,Ð^Ìõ¶œW‡\ßøi(I\Gq›ï^gÐTÏužûKÉmîTÁ£5šQ'ÀñFM'Öòç¢ð OÞÄ¿Âêæž‘îu«Š"m¬Nt„×m¶Œß[[™`ˆÛsÙ¯;)Š(„ñè–ÁŽ¡RçA]¸ ÈWJ¢£]n¯!.ÅÉ“D…ÿœ›)ÅxÛ´
+¼ïwHw¦‚gè¦c—F“%ø1úÅŠ`t¨‘ÅÞLpíØr…•ÆýªªR;BáòH…©#Î{@Ï4¦×Š¬]¸øþohFbš’Èv4‚ÿä„°™g`g1çYÑO´’B³iN	È¯n²`À0ÊÒiƒµÖŽ¥s¹ÚìÍ4›Ðî‘øëms¼±ÁòzZØˆn/µàIËÕÈ!Š¬ÀO¸Æ5¦l¨Kyn{¢65„qMµSâÁùÓŽÛˆÝTät¨nÔ˜rûýKÂ9W+6öÊ)myöì`l{{Ôjfµ9 ÖÅª¿æ7¤¼ý9Ío ¥‡ýX40Ï„qŒsÇRêÊë²Ì–]IdÚñÚ4Î‘¶ú¸œ%\‰•¿•%¾5a.2‚K•F 9ä?Ôk¾<±™³Õ´ Â/	h¤XN‹V8-‘"Ã¿."¾Šz¢íæÖˆm PF6ÜìÑò =˜Á3|EdÝµÊ)sv²0ç_öãqMÜ‰Fú7Îø‚)×f0"‹7ò¤+ÃÀ±¨¨ÒOÆsU“|œ²ÞÌäÚ±å\‹¦­—†Ã_ŠÐ¬’CÉÈô×jàœãX0Z„w¥óÐ°åmRiÑz
+èµÏ$gWýö§Ï<]´yGYîË§xi/×”È¢gNÄeöÜ“ñõ$˜BñÁGWo#ÎPñ‰yt¹ÒO.ä¾Šî_Ë¯\xå’Î.ÖYÛ†Ù3oÍ®Æ†£ý Ýž[¾Îêöì­ÁL‚ôý€o—4ˆCW}Q <ž´°jUæ°#õ_*ßqå©ÂdsÁSÍ›aÕúb¹æ+ÐÛÌ`Ã›+;øÀ$# ™èþæñçÊ³Õ~ôûV˜‚à6`ùá›‚¯‹âý3ÔEá5ùÿªLYƒâ?¾œ	OgeÑzf,0àÜOæ,é©˜“œZñ8/’R„þ€Íkãì©ê9enáÉy™öT/ÿjUäj¡ÄE®[ÅÄ3²Z†ñóþwlôHü†ü8²Aïyfðk¥KÞ&¿ï+£¢3™³…y¥]º{&\ª`lËOG_~cÔ[öEèõ7¿\@m'n*ŠÐw¾=îXËÏsú™§ñÚÄºl‰íwo*„¨9z2žíyƒý:JŸóÃˆJÛÿÄ§$DW'ªQIü:é}ašñ#‡m¡þYO®–¸ßmK_îG©`ï f°d´åIÇFå2ÖË÷0Ÿæ÷MïGT)·G=U>gŒ<³%éäAØ+ý– *ÊíDäíš“b/è‚A¶ß²[nãÕ©_šÏDDÝ4û8†Â‚Š(Kïl‹ŠÅÕXaZôSù3ZtåV¬m¥!oö¦g«‚üÂày'@Á(>Ñr,²¶è¦ÊÓƒÀø¤ÆDDë¼à£-µê=ø°§v;¬ð´iæOO™§ª¯töÈ@ú>æ0·á¥ŒÕî>ƒ˜GÈ&´*nÔï¦á®ž"½?!˜M‚*n[]Óeú»æ<™9ÐP\dp‹Ø…âWmñ6U9±¦gGp3gÍìÜ`Úz½V×fÓ¾ó/ÜÄpíÂ†b©ªt=Áæ‚/WèÑ¦Ë’£Lÿ"uH®ºX¢Ôüû[©ÚÄÛÜ¨qˆ›èaJÕÚ?ûªuù®	u«×¥Lîíá—‹Ü$øyÖ\pzâádçæßåt;DüøÂ¢0`bìÑ±Ý(ËRŒ»•?gÊ(šlä½üÂZÉÒyîô@fÈÍîažÀW25 $^c¸û/­Ü…ôaÕ/€¬œˆbOò^€CÃ»à‹}lný1·ÍCð.ú¢š‘qÄK«RÇ„!ÓÐ¿*??”|s»×€‡š)LEr9kî…®ûÁS…™¦År3+ôµò®¸HŠ?;¡ºnNÌO¾º³.Æaua½’ÃŒß·ämé“ëÉÛaœ×·s9†F¯¢=ºÚ½¡;+1cC·Ù±V.ëe^aEä/Ú˜óŽÞbÜg!‘–­]æÚZN2qb¦\WeÁHIŽ°„#Ÿ‰§¡Í ¼ ¡ËBô
+“.€Ê¥ížøEzi~C"m0?áÊ_¡ihê›'œ±D¯õeäÉ5v óÙWùÑÿ	B9pÏwH
+R8C§Å(ÅÐOšhNÿ’2¼JëAÃAÌUá”×ÕW?ÐtûþèÙdcU|C^ ÙX´A2Ú\XžðÈÆä÷)ª…[Sü/¿/nû²9ÝŠ" nÏÐ#8¹~uD&Á0B)rüô¢û¦‡W£!C„ó§è8Ù¨¡¢z ƒüyö‚Fè,6€ózÄ”xîNŽåµˆI@O±e^$¿¬TÏ×µ¨À.K	1¥Q Ù	ýƒ`zº"#ÙÜBÀ!ú¤"½¼ÓÌ„=ž<Â‡VÖ}Y}Ú“ƒÃ»-
+úìùx!å¯ÁÄ•?²Õêôl“]©¢û%šçøÂßVœ<ÎX]W}±Ôd¶_©ÑïyD¿"Á´e£Ôåoçíž)+¥ä¥ÎVéa:ÜŠR>iØÎi~–[˜rå=$ê³Ry? ŸÐ1w6â,Ë
+äËç9ý—_”€ÂÙ¦èYTÒBíò}±sjˆmø ®ÏÂ£šU™Rô==Î0Üþâ™¿²g^êB	_æðoà0|f¸Æû1P[ôðßsdOÌžå½ˆª»ƒÂZúO}ÔÕµ¤_Ân>Ì¦Ðâd©Bæ}À’êAåMÆüÃA!çüìýf¨Á¿ùàèGœcZwûš„÷wÛ-½ëÊË÷aÖ3œFÿ×8ÒuRGÌÌwèPoAvÓ¯·Ò€ì²\ÐP’‘§hV QL‰ÜÇwLØÉ€‚©g8Ã‹°e‚é©ôì:#`ô.-ÎŸ R“6.¬Ävãû;Ap o‰žÝZ¿)D7k¾C¾ÄÄ¯õöÓ} Ìc„»ÿÞ\îY7ï–n¢™°5ñl‹¾?KkNÒ‡pq¡<Â½j–A878áwŒ+,"¹U¡’X`]ÍÒp®ðx{œmAÆ0|ÇÍ8£E¸Æ1æÆÂú5Ù2+CÐ%ñó7Öf,K¾ÁÈáKÏüf1€G_-äˆëw,¸Åˆ}ó=~wöo©Ÿ#Ä‰‡.uiñVª9.ù%‹y¶”YÑði’HÇ‰+õ¾4”[U¦Â1FþOp¸u#*³õ=É[i‹¦–oÉ	`S™Ó"ŸúÈuN´ÑõÞ›ºSñš_ŒZåç5çG»mQa5Õ·#'ßVS0)ÜÔÁjq]à,oËæê@KM*§xœŠà»45{hgà­À¿m™}´&”4	>vAéŠ™—¯Œ¡‰ å4ò/ž±k¢¬¹bwCä'u¹¸HRç6ë3äÁR|£;}È£XBÛÃ¶Çêú Ö‘ø‰·›¢S³l+pÛh|£ö¯½r|µ¯<á¶á Öô4.¬tœ‘Qá¶U8l™ŸHê\HDG.ó%PäŒ¯F –nG‘=0@øvÁ]Ýµãd&ëZgÁÌæÌP‰šM±ºQn<¥ÛTØXóÉñ·=£ÜZÌ	þVãÌð{qvÇ/œºhjCƒ¹-·eãšçqcþ¯~é ÏÜµ°Í%Š;yÊ|Ìû &[ñòQú&/S|ØŒO† @Î¯Ëa@P¢éí¹aÉnâŒä¶uÓ?µ]:c‡Ô£_' ÅÖaÂŽåõÎŒŽ÷&Ø”ÆT;È‰½¬-ÎíöSÑ$³ëê™¸‹êaÈ7w&éÈEÍüÇ?j<Še†gýOmïòÕŠÞ¨²‰%ßûîÓG•t‡õ?LW%YLkVmŒß¤OlŒŠW|5X‚2p¥‹¹ñó­“K’—Úz„ýsßš0¹ôÉJr±FüÂÏ~Ö!å$~QîõØÍ->â<˜øK˜¶iüPüOMúUß&µ‰45æø6ÎÝY(uG~ö"•¡Ewjïë¬]w§ªŒ»í»à‡Fv~u‚ò·>¨C
+F‹1KF¹å,Ù`û¥Ÿ«dÀÀ“¤²t…Æ>*ŠdãœÙlë@»øW,AÁâ³âp aŸ<™Méoa¬bã=4·7È'º.q¦úâ*žJ¥{ºÃùÕµ–°,'³¼_Ý®¹¬ƒþ£KM¯6¹ž .È¢Xóô^Yâ¨ÊÁËpöå\¾‘è÷NŽ‹¤¸ã´kSzh•—ß16>Ðã´7¹_0­Ow£-o¶}àgá=ÉQÂr¸¼	Û[b)Ðëû$¢L)ùÛU±¶`«í@[Þ nž™ÚÌô‰BxXb1[íe^Ö•…Ššó €ÈÄÂ‰’´Ó<[+(äm¼o¿¹&gúÛë9Ç‹7\õÅ¶MÝîêŸ\ù©¡œ±SÁs€¬suŒ‘ Žˆ*UDzOaÆ¼ë0‹Þ½åõÌ€Í£øq\pÈ¸.‰{R›TŽUª&}dÿßNOl”ywšlTÌ^×uôÑ¦Iòä¦ô`{ÐA.%‰ÿ©‚ÔÍekuôRlsñMë§ŒìxYžRF'<»}<@yêèë~Ô8‘hiØH~¨³æ~¦Ò"!‹úQ­'Ó¡g=C4áEˆ©ÎÅxg§S•žÚ>, :©^ªïóšïºlßÅ™¸„€Mòxó“jÉ¨™PzqÿkØÐãÅ`¢ÀP‰OªâAG\6vhl]å˜OfM›·Só7µ3¹9åÚ˜Õ,é‡.J1«¹÷uÞ£ú2!)Y¹o@,ïøa‡i}°ÑÛ	 äµ¾™—ÄSt›õÜ¾b ˜{èl–ÎüE<ÇŸ7Ô4ÌHmÌ¦pwîu&);âžQ_ãB^ìÀ»“¸ÎZ÷Ó±ÊJ›Öç®ÈÉ…ìæéÙŸšÏ©™1Àö#¥=ÏãFI©+tvÖ°¤(¼ÞÇÍÉÛ‚#‡zÝ½#\böžéèôC<˜jú-ÁÿgœÓª•ì•}z¼6ëÉ½¡óâÌ®KÊŒ™ê¦&#þ‚ü¶ßÇš¹}¶6K;ôÅzAœßž¾UÏ?ôêEÙ@Ur¶¨sx…šË¶YA÷» £´c*èpÅ*¦«„>¦!½”EÎ¾V1UK@Š\¤l²0bÅHÈÑõKu¸#ÐÌÑ¥4êAfãä´¼×¢6Ì¼­‡(W…¸ÉlÕ•) œg0çl‚dÀ 'Rã]èvç½¢i
+$,EF~c?öQ’Wa‘ìˆZ‘æ€ þf;"S¦>{·¸.?›=‡ ªìò‹[ÕeÖ2½õ0qw57X½ÙÓiyÙË9ôbŸuÁl£1ècÄý!9Ñ;ÉÛugÍÁ¯ü?`IO]E•ru¶Dcè>Të’›¸R —°ìöîvØÚ²ñÒúŸ‹Ö/­ödù©±Ú¡ƒ|{ …×Þºö{RŽ-ÛA›†„¾ãˆ¶­‘\£¦1n°<¹äç«¼D—·©Òø5	Â¨ÅŸ©TÐ;å]•ó»x~Ñ®4v*–¥m h'Îï+ç±d<îŒÑãÉ¬ÿûÐAÕ¶§Öxèº¡ØK …±¹êÌŒo!ýªt\Ñ†¦*]:˜0fÇ=ßÿ¼4gÅ»'K=Ì )vbYè§ÆsMÀ:wî*é|²—>Fÿæ]ltìJ;Sh[AJ`B¶cVyø¸r%¢ÿæº;eÌ'f4pç’s¨…!ÃãB¬ŒØl°Œî÷ÁÞÐ'ç<säß¤˜ž=q¥bì»€èÑB«Ÿê«ÔÙ´Ša‹ºªr=Ç„ãÕ7ðóù*M¯Ê„I…²8uÛî6ÝJŒâÚÿ}ÿ¾+$ò¯irpß9÷=åŸ5®+îP…îSh#ôï­xœ{.ú•’ø¡Àþäæ{áêO%fùøŽ
+štjï(lã=v0ì¦V§W«áõªï¶¸Gßñói7W´¡–W„'K•»)3hLÀ_¸,¥‘²àX­ŠGd-íì|g|ô– ‡|¦´»ìa&äµŸÃ"à¹p×VYi±6¨ìoï<“eÊä²Ö¸&†vY8êÒzz™./ŸC­2¡4—¬+Ü.ó/{yèÛzå¦ÛxëB‘spˆ>üˆf¹>Æ2ß«Dy¼UµŒÛ›ká%+´boveH9¯+ìé¯»oÝbh¼xPCç§7Þ\ÞHAK†äÇ]†fòŸÀÂJmE „?ß!åÔ*Ë©bES›kVîg­›#mŽOé#$ëò´îgÛƒòB½KpµG5E‡ýùtÏž÷àÛE:SdŒ«¿‰:¹Oú(/c‰EX¼çLÇžÁŸ“‰(Œ
+D£ÇÆ¡-R
+ñÙÕ±p7Ä{J´/šzcÊ`ÅR\Q¡ÒG”#V4š¿gòQ´˜õª³f¥ýR“ö°‡V(éH`Mæ	šž ·â4þ‘Á¹qõþÁõ9ndµ÷·0Áþ™Ú©Úþ~¿‡Ÿb\À˜â½cèR¿‚¤l*¾.,½ô^ø%©W¥­(ü|ƒÌŸUG;ÖEö½ÆŠ#
+!{”F…é…Ðgôä(-A"böÝ—M°BÇ™gìÌlX|>Èà÷»Ô\MXotõÞ}bOŸy‘Ï"SÌù°„DNšXËŸÐ§Ø%xB ÿ-±p‹âMÊq€FõüOšù–D\f¿¹»EÞþÙ•@Å~–„Û:A6‚hÇÎ½†Ÿ7büÜèœ? è_E'ÃÞÃDË‚“ngsŠ™yær“o¤HxAÆZÙ©d˜óÌS¼HÖÝX­‡·á@‚ß_ eøåóÉJ$GžÎ$¥OÅjóŠ|âI(áaK¶>—„’âËßˆïPÔD·ï}¼&›÷¾JÙ5èÂê)Åp„/5ü¤a	ð'¡PÃS=Ñðƒ‘~†ùýÝ4iÓlf¨¹þFx§	oÎùäW/ø+¥Œ;ŽàT(×¦^\PrGÝœxÜF½ÉÒ”>d•1½W¶V—š'W2†^G~l&N¸y„S"U†Gµ±ý?ET.ÓZlÃ‡ôÒZïè{…÷nÄà·Î—¶ÉJm¨ºv‰S~4UŒêð~©<¦üÚ·ûÃ9ÈçWÙZÒÇVõvÚ”Æ(éš7åÍ¿ì<J )üèŠÉØË5ÓuFErÑüöx“0ÀHsÍ„J¯o™“J^Ùÿ3;K3ÏNÅ(cG‚Üfè4$ó%éÈóm‹ð©CW%kø­²ä§\c¦4³~mü^H«iZÃ§î³%h#ÇÐ­„ë€±±ÿœÎU—º4»ƒ2ÝðÍ@Za(ºMúVÜAÈÑRYº5aÊÄôgËË¢Cì„·uÍ’–`µö¼gÀetøA éŸÀHAÅ°(nï)PÎs['	â;ã2A&Åðè­4nó_™XQÃk4¥«Ah”F*«‹0/Ïp´ÿ”z	,ç¦$– ½ „yjz\oj÷ynK§ËÌ.ã= ˆD"dÓB=°Ù›eKwâEAÍÕ¤õwá—ÚÖ/[.ók&ê–ƒ‰é%¸ò|ß©Õ”kG“›BF¦G¨ƒŸ†ˆ »$Öò¡p+U˜w‘CÅ€.ºDbèö`÷œÑûÕøfLËF‘ë=¶æ^»`½”ßØ‰~S\´HÌÌ³qÍJÒå)7­ôÊiº¢Âñé÷qˆš	 _Ô©
+Ñès1·3°A—øÿ…Ô¹çtÐ4ªãO‘ŒS@‰¶>qN<Ô(”<)/Ð¥~G Ô¶6*°ÒÁ[e1«´áCú†¬äØâ{ƒHý[ )«ˆ¥ë'þ’øcá¯¼Å%{WÅAÛ£?#Æ÷«Å$(å¨þ Ìº.ºðÖ¡ŽÈ_{¸…ÛdGÒÕ›ìÎ5Êý)©Å}«2TpÊŠ¤{'ÿK÷)Ì©hä= ¤®GMS7yŠÐ&E™ÃZ!©:Ü­p2,¬á~MJÌn“V9µþ{?‹mu · Áoæ¼êþùN_o•Žjàúµø[˜­-™.œ9Þlîahœlˆ¸ht9†ÌN½¹ßŽ+¹C£êdú¶)2,8kþ7ó1œ¾ýõ)ˆ6¬å³I!±Qè—}¯xµðØÜß‹™¹FPgí”‹—  |À¨}õª#~³4Gÿ}ˆ FÛFB´HQXe6‰âÎÏç¥ÿì9ü‚˜yHEÙ·‚Dø¾Ž·5žÄ'àm2[0	!Â\½ö5˜	$zg—½{0°æ¯í¥VwJ#-£ƒÖÈx³üÖ=`ÅÇ=`ðýX¶yxó1ªô÷m—²!Þ ¬‡/Ì:IjùF3¨=“	Ì3ÜàBÖWJç:6èF½W¤Þ1Š(!àÍaÒñ^û=áA¨TZa_ÞÌ”§´Œr›ióxðÏÈ³á\Ã§Õ¾Á¹Ï=É§µÅ-é©,W•6Ù5öƒr©ç±ô’–[á6ÌVÐÄ7ÖµŽ:fF€¤Ç¯îÄ›a¦Nâ›B„áðÓ#È5ÁkHÐ®~R­Ú!V¬aRœá‡ªb—`÷j`0ÆíŽ¶\oæË@ûª&8Ü€”•J[dþbzÀ¦137Ò€)Þ•ë±;(ŒÜØ N®‘í¥íBÁïÇ˜ä^wn® <[­0çhN ÷˜9bx{æ)ãŒ:\CÚRm‡Ì.ñZ´/.ã0þìù%E
+la%ÔÈÔJu¾mNªÖ6,r›Qv@zAð;8Ðpô)\Á}dÌ{š^Ö¦‰¥„ÿÊÄA„—€/Ê-ÉºJDL›E¥ÌÚÜ‰o^Œ”ñ}	¢»§â´_­æ0f´OÉƒyš„5'MÈ5¡L÷õI¦RñAnµ°('„&¦¦8ú8ò*Ýñ´â!Ý¼ä)öœi®ƒ§Óž©­'#Ðð†~ŸïÈíSì»4VP…J¼¥Ô+ÅÓ[ÁhA@ß„¡®/5›¦bÝPÖR>UðHgæàÚã«–¬dúB3ÃâG$=õ#NöÂ»nq=Õ$å.%%ßXuì=‚©a.	àmÙñðSjá^»2û‡%á”j2Äôð²Ì*Ìèd›å)VÓ£‹ÕƒòèûiZTR3Ó¬ØV$Qä³®{ÿ,?TÁ5¬³Þ ª‹ö•Ã®L€¥ý°góºº¯Ê«™é¬IsÈd
+Ù½,ñ±orr›|·ŸghÚ½¹œ³ðÁ^{èíFd¬ K¶Ý§•AŠl½× 7DÌ”ƒ¨â‘Ú›pzüÌAÖñ†È²äÿJE›c6Â±g]’Òçœì4´,Z4‹ô$.l>RQÌÀ%“¨ßš¯©sKÝºS¤gPl‡&ÝÕLu9&Ž‚£3ÒÛº±Ä4ó-Öõj¢x?¥ØðÄh”ÛZ>òØ²}eR”äu(sŸ2‘›°i—\ðkcÌÛòŽB,«øèí½M'—‡Ì†=r©[CH_—yšû­!ñª¯é»õû–øsÆ¤ÏAl»‚_ƒbdù¢(£³p¼ÀYì}D:œ?]’áÚU<x¹€`Ó*ÄÈ)ýZ ´’“­2Ï)y9ÄÑä‚{KJ³X¶ü¤~Jš5øêØe¯–ã0%òô1 ™ q¾EüAÞ¹ôÃ+åŸõ6˜éÉ«èJ¯¶I®YÎ4#÷œ”š3Så¯3]z¨g×éý†J Çº¼Å…¸F8û2€1‰ˆ#9¨’a&Dã2ÑgáT ñ|,U˜ºì%{øóªuØQÒe)aöõêöÕwœ‰LŠèËy,t}Lt¼À¿•¹wœa¼ ×Ü›ÔÒ9i;, ïÏQ¯;Æºj{ïæžoíÙWØ"Öh4> ¬[ýL©ÃÃ¹v¤Kß¬’8a“IÈ=j–Ð§šm©•»eœyàYáƒ}$ÓË$‚çª±+îBŸÙƒŸ—hÕÂG—gÛò')À(&¶êÃ±8­i¬‘ß•Ô/)ôÂRq¾ô'Œû½%vü»r,òNF AÃo‘m$vàÑkA	Ì–ûökãúã]|¯/hÚ-ÆŠV—?äúé
 
-        if [ -z $kode ]; then
-            echo -e " KODE SALAH SILAHKAN MASUKKAN ULANG KODENYA"
-            key2
-        fi
-        LIST=$(curl -sS ${REPOKU}/license/main/key | grep $kode | awk '{print $2}')
-        Key=$(curl -sS ${REPOKU}/license/main/key | grep $kode | awk '{print $3}')
-        KEY2=$(curl -sS ${REPOKU}/license/main/key | grep $kode | awk '{print $4}')
-        ADMIN=$(curl -sS ${REPOKU}/license/main/key | grep $kode | awk '{print $5}')
-        TOTALIP=$(curl -sS ${REPOKU}/license/main/key | grep $kode | awk '{print $6}')
-        cd
-        if [[ $kode == "R" ]]; then
-            MYIP=$(curl -sS ipv4.icanhazip.com)
-            rm -rf /etc/github
-            mkdir -p /etc/github
-            isi_github_info
-            clear
-            APIGIT=$(cat /etc/github/api)
-            EMAILGIT=$(cat /etc/github/email)
-            USERGIT=$(cat /etc/github/username)
-            hhari=$(date -d "30 days" +"%Y-%m-%d")
-            mkdir -p /root/rmbl
-            cd /root/rmbl
-            wget ${REPOKU}/permission/main/ipmini >/dev/null 2>&1
+øîsÉ„¯_‹LS%ôK\÷ñÔË•À€T×{&}¢1>ûÏ	MÐ8Ãõ+YÛ[å¡•õcîÐ=ØÉÄ¦“¢£çUTQ ù’µ¹o‡5nPéwpž¤ÏïÀ…Á÷3·3j:ý‚‹Oæ¡‰t†[×þ_qì“\ÇI‘üF¥HÕ>w&Ô^vK(§„Wm—ö‚Î™÷™3sFâ”L¨¿±¨^ œø-H¼Öƒ}vpöÙûÂ=bz“S£5Ô)yÆ‘Q:âÑÓ~å¼\¢²- ”ù0-{)ÿ«‘×«…BeëQÙæIöÅ(zÒ©E³W;‹ÑùÍ+/Ì¢z€ÐïA°ÐÃûOT&^10î…æ¾9b!CÝo¶ *z<pu'²˜£hÃ`;ä% à%Æ³ÏïöÑAä'×rã)Øf‚võP:pÑ6T Á<Á-‘ØÍï8,÷³gNÀvp'+ÿbÏ0õ`­òÕ}.<Ö]qûÅxMÿKeÑ®“}A)&D—a$dÜ¿&æ{®ŒSŒ– hôxÏüÆM®ô£êeWâï(wº¾h#1á¤(ßñÅk$®ŽUúˆUé9ö‘äUìª›{“Yš¶.!j§zÉbýP›¼I'ã+G·›]š-”¸éÈ<¸‰ˆà3¨‡nAr9
+ €­®„X&ˆ‚Àh"Å<hÝŸÏ*xÃqoNn^"^†ëJ›,‚ÖUV§Hæ´^$OWg¡ú‚°Á/ÅªJ8® ×Íëñ‡½óÑôínµÇ2Âúìr9Ð#è‡ñõt©'oä)5^L,ÑË#·PúgwÙÙ?©¬rÇ÷i	ÖKR\ã´ïàÛjõÙ8ã2vý¸%ŒÉ½ùÙ¬g…qYûè	BV%ïÕ¥¼dª/Ó-„¥¹‹>×Ãb69¥ŠiÞÐw½ÌÃªçoÞ7°íeñkü[î†j1Rr9›=ëm ´•çÍHÐxÿUÚ±s’‰ÕòÁì¦%ÕØÏè¡3YKÌ©«â–b¸‚þÒ…cOc½¡ÑuÑ8'ý\…Ê‡£$(K(Ã\ J^?>Õ}‘sd¤'“Nd±Á×nÖÇ´v]ÙõÅ²-J¯BZàý‘AV8æH"^_„u²yYïV=þ'ª55À¯@Ë¸çk K2Ol˜ÏV“¼W3à´„:®-¨8
+¨4(15åïu9¡Ú¤mÒ±s'?À÷Žÿ‰¡òÎ*·ÿ3,	,iÓÅÕÝíš i¨ÇVêÒ‘þ3F…è"}7þøþÊ-ßïG¯ÊÇÕ®ó
+¨‡ÓTÕMè±x:/”GŒà6’œrƒ'vkmìp#Yî¥bWÝ Â›	©oåé¦ÏÆ¢]ªÇ j?¯ë
+ÑÚ£iÞ,£Co 3@QBåÈj{MÍ)­×“—º^õkZºhÌÉ#q!UÍË¹Ææÿý ([¢§cˆvÖ@uº!ÑlpXèÀW©¡­	`Áï(Ÿƒõ´!EhkÜì½ú<²A«è÷˜ùO>Œ„Uß}-~½½í
+2Hóp8Y×&‘{âý¥c…d âÀÖ¥³cxpöÂ_°_ŸtÝÖÍäjÒm§²tX#YºÇvÅüå>ï0;×­@Å½] ”&” ìTîVàÐÂ*±Ðnê¾ÙFZ Æ:‚¥|iŠ(	ÜyåÆ1zjûºØÆl5\— ÷ÉOÒ~ËqnÍcô
+<V—@ü9†¬]!û5®¸=êèžD¼CÅ1}‚Æ9º¸1E(EvŽæsìéò‘LOŒÁ¬'4òUû§Çê¡ù†|2¥N2IW÷9S€ŽÈcŒBõí£Òz[†C–´vP†°}ÍQaŸÌWíD°ã2åG>xÈ@œHšxí¼XòâF«úžq('3~¹¸ÞçÆ¬˜sM‚Ÿâ´ÞQôºUÕÿj‡Ä2¡?æÖM¼Øìä¾ÉþtçÄÕˆv­¬%Í\ô˜¥©«iÂ´-%Ê´sÌ	+4EÃÙÌ·N:Á4Ç6„‹k€¦-ñöÅod‹L5à9VrZC84âžÕ¤èÿ­n¸†ž,~öÛï
+&¶öÌu\©Õ¿»òÃA=÷È´Èò6íÇ¿¸Æïþ§;”4I¾É§ƒý(¦ŸÖ¾Ùà¸_ö¥¦yLësæ9Í “_÷òªHüWâI¾$»ÒEÖtP|¤lÑÆ;®ûÛ`àc%T¤où†M1ðfhG(<~ÑÓö)êG_§=m³j{){ÒO'|\b.ï†^[Oßx––~«7ß+*ÿågÞ<ï
+‹oFë“e;0×RÎ9"õüi¹ƒQîšCÐéYzó©¹	F!«5Ã)4e]Ñ%`†f74­f·“žÂ8ÑlÏ>ì³ñ‚àüFK>e”D¶ô"Œ—ç^‹ÿ§|1·½„ˆO§ÌUé ‹7!¶Æ5íŒbQµtp¥Í+ÌKNãÏö!€CQ¨áó\ßÂ’ò”:Œ|ýnó[êlª¢þÚ+œ1B©v*Cèîvôø>F8Íí&¬ø¼¥tT¹Mˆ²-e«kÆRv7Ìâb›™}îu_=K !Æn™mÛ43ý t9.¨K@ùûu„b'¹,»£ë> ŽBÐì/HFÏ¼6É:SÀD*Âš
+z(]jYš‘éZõæ#9M†F~‰pÓƒe6£Ó”þCÊ¼Œßx¹j½ŠíŒæÉþRî‘šO §Yh“ž3éêCÕÅv¯È,ýŸ9µ÷MC^ÔN(BÜS+š®™y6†17’	 ©^Y"^šéüHV*në,JÍ@gµu*ä”¡Ú¹1wŽJÅØa3×Ú ÀÝº®KY^s‡¸NÈEùOÉk<E/Ÿÿ?Mõ&®HÀjâvˆÄYèjC›'íÉ…·èÞAá~wæž="#.wµ™çù³oE1â”OÐô4d,2h¢=)óBët®ø&¤Áã“·ª —âæè¼6/U¹Œà]-n——²g§4ÚIqG¥Åì !´§Þ˜N ˜F#Ä9¦#É£)¶IÐûzÌíq m‡Ÿbœ¶Rè¿ûÕ‹t’«‹ƒ&
+]Òâß-:sSÈ<i­ƒæ±‘úk›E¸Ío‚¾JI–)`€ÏÄ¶¦`Š#êïQ×ºÑøf
+k¢,Kñÿ÷ˆVJðñ$¥ÂTaÂÐ—û°‡íùR"½¨BVÆ—5'ïa †Ò“»HD>õ}_ayVÛ.tïúØƒ#ì•È½D%hí#©ìh_Ü„Çà¦†ç¥ÚúÝ¥–;.òAµùiG \Ý!)_óØO°RÁ¼rà¨|=òÐ%j/?úO¡³¬¬ËÑ†H4”*št6Æ¥Äµ’²Ö4&ùås%–Èê’§5³q8ÖU($Ok	ùCìbRèRCGgø˜‚Þ–
+WvíØ,â…„DOA¿rÊ=¤Í¤L›Šd¶¼Jµå ÈX¾„ÉÓ
+½üò ¦]½þ‘/$½é°lã*ùe³‘1®2"ëXMÓ<òëh&*±MOêÒý¿ô¬o­ÅÈFD¡‹î“®éaµúôÛµJ˜RAqýìÌI
+½ŠþŸçA3ö–°B9b8(1þæ­AW	ÄÕÆßó¢_Î`«ª
+ÿ(öŸ2å%‚2éÞýtcÛa±‰f¼¡PLëe’nÖÝ¿ 1 Û|>EB?¢ÄÉämß”)¼°	¡˜|%ïÏ8ë\½Pÿ:é… =äÛÅ/ðÏ¢LšÀúk/·xê(T­«HÌýÎAQ ¯_:ù3Óþ$EE@”¸±pX50ÇÄwÛÄ@Ö£vWÍ!À-ùFê×žêÛs«ÁÍþ¤¹Ù‹/)3Î*D±;½Ú»¶hpj€ôðýNRe°Û ¾E®º”}Y*Ïªäs•­œ‡¼NÀ·üÎYoR[£þŒÜ%›ä[)zðVìÊ{¹"Õ'ó¶•pÿYžºPÉ§†gÍ¨Cf„@÷ÍþÄ\`N1ŽŠþÜ…özyzé­ÙëW3ƒOÇ‡Í(à]U3³œcŽI¯¹DvZ<ëO¬=Ã6ŒÖoãšû†QïøV8ÁùÑ‡Þ¼'tßÞÁF{dlB¾‚á‰PØ9kkÈgM0ì{´Ÿý;{êŸ™Ÿ£¼Ä­~åØhË`„í={´4Ãù¿¥®Ât[\óÐs•2«‘‚dkÉá
+¦Æ8±ë$Å˜O4Ü÷|—Ûoˆ(wƒÔN÷; ñáÚ¹“o’%œþ&ÐRY¸s\¾|v±„l×+\È³¤Æ•zcõÕòC¤Ü ¶þìNaÐ\‡z¨%ÚVóO•Ã”iãìô®«ðWCÌîïí_àÅ>¾F¶/Ì^†Ècb¹ê¼€ìÑr}PõQÄ¾×Z‹"Íþ-Aå{‚ä·’Gô›SÌ¿SÏT„—óAÎàÙ¥š˜Á%ó±#õPÄšm;Ì`Ï‹,<Î‰6É.Æ·qÙíC£”œ½œˆÌ•hŸS%mjÀUïpiMêFtRÎmFÕ€C{±lùà­^Øe>›ÛVKÀ1?ØÍ”‹ýº¥9ì¹‰°RmºñÕ[˜² Í@SÆD ™áIqÀox^þì¾ŒYz©*ÎœLèá×\Ä9q9¿ê¡jþ!ó¢2uíßyÍ7µÝšÆÞVŸâWç_¯¿X2¹§U^†x”ö¬Ö@ëÿ'Y"Yy÷Ž\aç'$üêà7KŒì^&\’¯NÂ]pN&è¯ZÙò8ÔºØ€µñ/ã»#µ?y;Êò·NÈ”{˜}tž'Háß©EÂ˜¶H~Üp-ÙCgŽÙkkêT²‹Š…->àb±‚’Örµ!¡€|é•t#µÓÚÂ‡Yÿ’ÁÂYíÞˆsÁ¯-¸’+_¸¤Ö,ä{ôZ˜Q‹{ºZM£êT»â§ÜSx0'H¼Š»ñ(;s>Ê¨V\AùYBäãðÊåî”9¤x»ô
+[º¦ÙÙ¡Ÿñ•ç²óšpìå(Xß>´ÌÔ8mŽ`PK…‰£ŽrÆ”ETÔß%m¤Éz>Òû€-c*U=çî|¥k«6<c8®Æ=Áç³›+ùÊÊ5°P%áE|3bÈW¡¢¢lìvUÍ(r÷LŒ‚™ªUK;U•¯¿M©’šä=€ÕZgøÁ¹=ÃOÉÕ3Ãzoà—2ÿ2t¼@ý­Êè•oÆ™†3RH±*²:K¥—QUwHw°‰£x6ú¤+×˜TÇ!zGˆðŠ2-gZï›žj£ÖªJ×¸íÒ7á?®¡í UÍÈü_sWM[Vn²¢œí³”ƒ[Ú…]ÁY‹»…ZÜUïþŽ’¸u"¸ýðÏG ¬œËd"6 õ/-+¹\´îpÃˆVb*èó.³	v©Žmªd;ìH„	0ÿÙ»ËÇ¸üC$æÆ%L/E#)&°¡ª0Ÿ»±ƒf¡eoúíeÄ¼­BÖJ?ûž–]Ãa{DÂy
+Évç£*BÓ_®™ªíkât"®š3õpÛÓ‰Êè‘/„ºy7Çe§’Ç&Ì8D9ÚÉÛ.16I0 í\—OÀ X;¡7Ö:-«µöÍBš“U5â·#ÌYrÙÓA‘v k[áIš¤q—
+¦óˆ-VMâÖ„k(cœ‚³|å'·Ê€V\CB#?¹¼qét|ù€þw>Lûo 9äróm³ÑÕ„Üúßáôœq©w0ÐèÕ¤BÜsÊj½•fÿÜ»ö|ÿd#êÎãtuèç¹´VàÆõ3ÄõÞÊ©µåé’
+JøÛâ]tËï±+t¶¦e†Û‘««¾2gOç:öjÛ*yÔ¬É½¢ºohh¯Žÿ>¸ýÒ2ÑW6Å»lÿ",À;ÖÍuüµ&Iªbg–k‰ZšìÙE@l€š„<Ä¼Ž	¬l,Åó^@Žè<õˆmVaìd¹{EúUß²å‚»¶9×LšôZà½Z`j/m›ÜZ]#ñàUœ%Àbšž:\lj3Ú-nfïQ÷¿¿ßõ¹ƒ[M!¶k—Í~1š)ÙÝ$u±uKÜ‘msL¬÷›bÚk§L£äðA«ðÈöÄ™‚"æÐEHaÆ´5ì›îøŠÀå"¤'IJhî!„ ¬X¦‘†ëºˆ&^v~Ï•·‚Y€lWàq4Ñk©b"•­H›WMß$òBt¾É	½+ê45µ{›QŸ¨V01x!³j¯O‚å{¯–£¯èø~û&*Íæ'Žø #~³}¶0´úôî°J•ü‡]<øÍ¸ýìŸòNœ|–{Ü”rèã
+9—\?ä‘~›O6ÇilyQgúépê¦°e·¥Í)±ÓRÃ:Z@aØÊ
+r–›2¨ln½d„½‹[¥lÐcW®Ýf’ÒIf§)AâìƒÁJÎY dÆfKdÎ-.æW/Z$³*hœ–Sdô+Ö¿Yu4—ÊÃèöPb³Ð2ß>›1ÏàÒƒXÿleæZ¢H'S,(ÍLåmËJX«Ø;RÎ“bXÀBâ;óp:„¦kÊã¾ãÃ-"öÎl!à"O‘ Ào\ó…ÆÇç@?2á*ÑûüR…ë@µºç*¼öPÆ»¼"O\ß{õ?œ[ NB§d¼Q¶_ŠÔí&Š8&áKhV;å·÷Nó5"{Ö€=å+/.€ÛÏ—’®ËÏkCÖJ4¬Oêž	=ïvÅt¯Ç:J ˆŽgç³Ÿ¹É•%s¸åáKªßÈ+f;¨ƒíª¾¿<Ö•X³âólzcS?ÕjÆF¬C³ôïïn§bm¥\Â (i]¯!–ø¬-	xáZ?IÙn†€Õ€úÆîjm“ÉÁÍÄ‰/õ€ÜàÊÃÑy£·éå5>©ìó:nÊ»¶gëÅUlÜ»A£ª.„•€/œþÌ&oÞ<C±B÷øuëAO§¡móÍïý~Ò¾ Ä¢°â–HÍYš(‡¾AC2uÂÓdîÖN‰›û`Úé¤¾å,Dü»šI€!ŠwÅç­å›O¦ª8‰á*#=Ç<GìÆ3?Å›’=‹­Þéã $6‰˜Aµ>öéãW[$XùÑwcut'ƒµø}ôú ¶$ÿQâF^ „?\‹ÿÍ4aÖ*nÉebz€8Šuas7â¸ZýjÙêƒq?ZeÆ•‹¸ìNG~uø‡àÛ…Å PW»O~]n•¤Âí¯øîÎNT~|MËD|æ9¥7êH®kb,ðÆû_ °aì9yÒ[†,ø“ÌÛêƒxFýÅ‘Žg,„Äƒá|MKÅ³àN»X´0Àe[©I…šD I’ZH¶m­þ*øL&Rý¥Ëv)™?‹p¯_õò±®|V7\c@òŽKNM`É?¥)Ïj»°€XhÑªP+ãgÏGÉ"…,íÉ7pÉ.A•øß:¶IÞõó¥I ÏaÇµ$½è'éb4@üô¹ýxÁÒÎÃe€Køe!‘l¢ö"»ç÷ôcLªj`hQó´²âÚ¤êžØ½ç†	ÔÝ‰¥¸Àc0³ò”ß%Ðè!Æ©*->ÈP9üåžÔ¤AQ_¥yª£©.ÞLgáÑÁœsLä`_•ÐEþ®Dÿ6ÂÌÙb$£Ñc9t¸"˜R‰¢}+FUNe°$(Û#ÊV‚·+º.ÌÉ¶–q>%3ù²ß—p*~ž‚…Šy±ïÑ–œÌŠ½nKÉñv7ÎŒkO¢+eÂ>Þ,Í1„ôòÕR|"ôëÌÜ-ã¶Çcè<ûÎY×ob“v ÊŒ3ØÈp±
+§MŸ¾:f;I¿Ñh[øê³¦€Ï*”BÐu²÷ZAL8Ì~ˆbsf]Om!éçC.ð'Ç8N%þ‡Õ/•;?QPxþ¼µºâ5L[MÎ®]½5‹Ð#³ó|ÚõB»Ò“ðyF÷Ö´ï+ÛV‚ Á…5ô|c±·/dIßâ>¸óz­ú…­¤…¯Æßñ
+p'“lðˆ¥÷-XµÿÒw”H“0)WÕ~Ûð\"]I¿(êÌŸáñ¹¿_f‡_.TØÂ³µ~}?OÏ‘(dŒ#_œ)˜j\pDnäãÛÖãùžÁMÂb%Ÿ•¿½)…èy~áš¼5ËWì©m$T÷Oµ°1þ;Ã>D2×àI6M'À¼h—¹oàíÓ¼ìƒlr·G£d&ýJË)ÎO&6??›‡ñhfb°HÿeèUP@#ó³ß?Ìæ7QÙååŠ‰ÌÜiŽ&ì¿ Ù÷£B·Ÿ5µQþb,Þ$$€0ÿ“Õçl¬(SwÏ3¯6Ÿ¾x—?{9P¢#^_ÔîÁm‹ZÒ ²MËáå8ÝÐs5¨Œ	›ºÐ”0)ÓñäEÃÉ–8?!Ðîé)“MTÊùy˜Ì"3 t!
+$°JúòKÂn‘’nÁë#ÇõYt.-¾²¡\­ûL"§Ã†Âó–µK–¬‰2RcT‘ñÿÅmòÛ·ÃJ3ZPÑê¥ÙeÛ0¦`A[àœÊV«~Tósš§Jùè¬ë%².ÞÜáì-–*Ø‰mµmb½3ÅU*ôqØêµY¸_ä1ƒéyð“ÎvùÛ‹ãªŠçù*õ¿élÁ¼yJÍd÷åäPIO£cƒ„;*9ëIÛ «)ÆÚ~gïÕ<È]ñØ&‹cçc[2g÷å\"d¼à/ô­Ÿ3%ØôŒQåÑÁ˜lm˜|ö0e’De&,®³ž@ú@Ú_CcÿX¥er¦î®F‘Å<*¢C«Ä×â:Sd×1‚ûŽS'Ö!%¼åÜDª”¨½q.ûÀ·=-»,Ï*ˆMðÓZ^s~í`¹S=X29ðòòßCî”œ¥é>¨=ž|J¹½m7ë¸NúägÐ^…»X;iÄuoW(mvZ„xÌ¦¥£®Þp_„|'qŒU{ÄÛ®rµ›7–[;.†U8˜ÿQ7(Ê®cÅû`å}­•uuC?q2Ëb¥©A¿LàWŠÝÝ«ÛÐ—å³xÜsÆ0Q(Ã3³ã“rœ³ç²K&¦gåV1ne…‹yÃ9Ä—<·^{KQTC ÅÝuJW/ä:Äø9î@_†èÿ&jt†Å®9Œµ$Ä:ÚÀ£É‘\ˆ£øà?¥¬G9œR€y©ì…¥e°M>ïÅx°b¹ŽÑZ5¤5ú§L]’3×“”C¢Ùço‰ŠàIÆ¤ï«’¨ÿÇyÌ¥ü>YÙ´›}lì-;_¶âifNy°N*¹Pýº»
+„—1f)•[ ÆàBt×uîDƒ²–#o¨,Zç^KFjõyéAiÇbÖj8hJ!^7üEÉR=º®WB@Ç¼:5Ùœ…n;#¶>ø=üäpAHY›xJû­Î3‡ÿƒÙqÏRÜÕŸ×oUDU )&ï„	›6	éÛÎT5êßÆèVJŠhç¯kU‘€âõ[X™i»Y¢	š¹.+Ìb->ŠÎ¶OÇ[oï"´¶ŽßÀþåÆ­%=jòk¾måñ”ÆÉ(µáO÷1§|ŒŠï¤ý @âX;cñ0.`µëƒ¸k¦Å­P_B{¤ÑUPäà¨§Œ´ßeA°8u+q<ù…Õø­•^_²÷ÜÖµG&ðpÉ	,”
+é¸,AoR{àûg}4eCßNSú6…ÀV]®qÝ÷˜Î<·Cóª³}‡¥L…ˆQ/½L˜?®s]]ÁÛŠ{eÀÕ 9s•ŠèŸÌÇè™¤Ïl¨`^Í!ºèÅÚª‚ª(0ß=‘ kš&„b|ˆÀ&²l×ŒÏÓ«6Ÿ&ÿÛü<LB iAd@"Í‘(“•eÇÓÊñYÛ¯‰ÕÂ,Ç(.Lôº˜ù‹½¼ú`ÊÔ1$ ~Ô6ÿŸ×cÈÛúó|¼ÌWû<|/Jë
+ÍãµjÙC9„Ÿ¶L·1Ž%v	3˜ƒ@	×gìž}®ã<Y`ž`j}âXjìüÊ"­·_fêµÑÿÕ‘÷j{‚_öGxÙÈ3õQñýNxgèÞ¨eóZtWóévg»6{oÀÒ_
+ÔB—/À·þt$rÓ°sÜÒd”'sMˆªÆf-‘±$šjLSÞx±2ìî{ŒurJkq¿—k·lÃ;þaÊrì˜— ÍQŒÙÌ(ð|0Â ö”VÎ„F»<$Æ]áù¿p\\¾{Ääw¡u„J¡	Ô\ÖHò¬ÆfçÃãl~o%ÖÂaÚõqQ‚X£Æ„úíQ8nÈq{H†8ÃHÝN ©½'1ª×k¨¤;¢føê{ZŸ›’QÕ~ó)Mì¿Wöoèš°e»"‚k£ä®ég^aqŸº, pí
+¬þÅÐúuúE>µåYj€"j¯­…ìxÓÐœ™	Jú~KÅn¦­²«óâ¤C%­$<M ü®­¬ªã„‰m‰;ï¼Î*ÀC»äš© Æ*ÿij,–œÅ:UÎJ¾yÌd² Û«5‡r4H–—^”¨ÞÓy5dæŒˆ¥+wµÙk¶§óømO€öcˆ„B—tûÛ0Þ8ªœróÊ ÉÝwo`>/£ñ›eA’EC&õâ&ç¦	¥7ÂŸ
+ÚŸp%¤ï’ÔSjà˜«¢·~[€ë?ùŽòÂaÑÞþ¾eÌûx…ÍÍ‚Kï\®—ƒOR_àˆœiÕñ«8­èŽTé¯K¥ëFy•#ÞÙ ‰J•Ž±ÃÏ¾Ú³Ì#°u‰ç/þ²Î1L\RW¢bŸÈk¯•iv¼VtuÆH4„?é7ÛWŒ­Þ9ß-Xc#;†ðGE©:ñä¸ar*ÀJ©'oa~ÖöSÍš©‹_Ô·®Î<Ý¡D€·d³s.aaíñ£*=4én%3ùÊD’‡•ˆû'ÕœCÎžþV¬>{þ,Ö–¼¦~sÒûü¸}„G­uìÇnËþˆJÍAJ£÷»
+çÆY[Ô¡	òùz©›¯„ñIT>:Ëk‚=ÓZÖ{ƒÄÉÑÄ[.ÆýXã27“ÐìUàÒŽxþIÀ£1UÌž?}B×‰8ÉdÛOœ]i$¢–ÔU=-%qöd0©pÂúeˆ£Òç<*³i£û™Ñõÿ…Ô§}—ÌX{¥øD¿íšeÝiŽ´ðj ­ÿç˜O:ØP_nï…ùµÛû™ákÐø„u•iÀ¾·Ö;
+ž¾%ž+ïRPÁhß¡¯­8±Xrˆ¼"!ºgú™pX±~‹}ú®HcÑõF–Ïùv¿qµ&IhazKsr„èg°ÿ3vS§¤66;y€üNLçJæ¤ûT1êšN¸·“i™A^3¼°uÞ-£ÍíRG ZÏ´
+{ÂÖáA%û¤¿ð‹X[8e†¿tuÜLŽÜß;Y¾ÿªÃpŠ4b©>CžÅdKý„ÜGÿ+ç)Å'»"& ÿÝü  ¤ÀòŽâp|¿”Y66çÛãÆ~ávÂ¨ÓÃW ¶Ë©
+°"ÆÌõ ÔÝ:ôÔ+¼êèæ÷¾àH×«?ã
+dY™—øÔÄ¥aavW„·	F‹T›ÄŒ.ƒÍŸõÁ÷Àò¾–sCz)Fh×Âý|Çræ@v£QÞCÓ-â+‰GølF`Lsv,…6c<MÞØJJÈ6ËP}x+)|{ù{b Wà¡ô¹Oi¬ºá`úRn…ãô'|®‚˜ö¡UÆ)íŽˆ .ìš)èùo¼ˆ‘	2gC¥
+õCˆuâœs~Î¹Î¢“Zk64† <qí'ób…2cz,ew°¶Ð™¸xàŸœJ%Öðß:g/D™;÷î[<ÖJ<,»RHoò[l)¬Ï3rid”¶%ŸyÑÖÌ‘ò];,çÁq¨†;%3Ì¬¯ ÉØè×Æãyu0–­‹RuûúÝVÕƒ­…ÁYðø9¬ÀÅ÷–E£0ãþ/-7ãÙ½TNDPXžYƒÞÛ>O!©V>¬KÑ Yûè%·H^OrKÿr ®q õãýQÝóîØoÄË4ìuœÅãÑ'C†x“XíAÃ8YË³I;x€Ó®,B`ÃBÂû¢TðsÛŽÁ+@ 9a*@ß(0Ú‚ñ ŽÙ£("½y"fd:ò¸ÈƒH`çq8Š¬¹0öW‚]<fB|Óðµñ±dþ©©8»M8 ñ—gX•e×n·Š±).ƒÆü)ØÝôs‹}‘y±E_>_\‹ÀCs¤F½¾J—MéÈþP”‡‰(ÀÕ8ãCöŽÇÜ	%±mbæƒÃ™ÍñÆÝ` ùà+hôkÉ~ZPéÅR›Žˆ'&©ÕáSOä9¾Ï}sìQÙwÅèÊîãM:0L7´m'•ÓK|[¨jßO`"Ft/¦ÿš·—/(Á`=Õf“ïðÅ]Ç;‹–¢*ŽHï»ñP¿¥hêœ”Ã÷yI'ô	àÄÆžN×òª@„q;Ðõ'ªP§Õd?9<×®?úznÝð9w
+=®=Üú½TÆË5žÅ,ëá$Ð”®!W´iç‚eIYVCÍp+Ž>ðüM¿<C«òC¡
+ÔKÙßšñ/	ÛŽB(ÖY~¦®©MÈétûÕUØÇ@ó*¢F}Û[ÿù¥Öþ¨´'þÄ¦ˆÈÂÕ£\>ðN2ùQ…‰qhªy'Š"°îÙý¶Ê!a‰t—ÒÊ(¨Ê£´©¿ võ²Ø˜¹xšøm"!³vÉ\²¼;úEä¡%?ÝÎ½ †é>üt…Xc¦Œ­¤•O®>9÷Èe"awððÓªñ¾\0?¥ƒ­ž%€í$)óæKuz[Ô+XÚÚ™¼JË°ÌZÑNVjÇóÙŸm.
+CË-~;'»RAðuÜˆ¥ç`áì8¦ŽíÍÊFž•I`+êóêâñª¼G1(Í"yà?
+QsÑm7!¥ëc}àNÀZ3×öPÀ»d×¼yºKv;Ïú^h¢RåÏ8S`:Œ~âÏó­§èÿ°Ê&n–qy1NsbMï,U’”(a
+šÀ¸<C:J.Ó¼×å¼‚¥¶ÂÔ¥EkÇ«ñ¬>uõü¹éíá³j"µŒûì®ˆ{éYY s>…CÆåáã,—l„CœUë!Àn$uÔ1Dï'‰*–ØNãax}Õô4àa‰}©Ï$2yàýUš¹bõb¬Í–mÖµM‰?Ÿ¼ð6Äk6ÁYPc%0¼¡\(ªL÷ÍÍa+ÞgE¦>VDCÌ!Ÿé£Š ‘ãUÉ­D’ùž)h‡IóT«Áí{£ÜZ§‹àe+q aŠN!Ò­þlR¹ztrã/>TŠ¤4Wót‹CŒáç«ÂÝ××F'Ê†Œ¡]Ó¨|¸}ÿh€ãœs*6ú¼¢­Í¢åbY$Xê_ö¤Ãs{ f¤¬ARu ‹riÍž*äe;Œj]‘Gî¡þñÊÌVÑ8go*qŸ' Þn"à¶üW¬‡*ÜpŒ2Eß€<†ëç‹cºdIëJš"öfvJ·‡„B~z<ŠßœûÚyÔ.‹ÎÊËÆß³ÖßÍJ“:Ä¿é± ÐñG'Áß®?Áâ…ÚÙ9–…lÛòÆ~æíÍz†•ÂŒcîíÊè–áˆòwKtF1ŽíƒV«‡›ÓI´]{.sd'AE.Y§¤®Na#oè˜*ã] v™ñ¶.±}÷ùt(ºváâXRáÝyyöåƒø%»Û‹âßðf?neÉÅâUnf[‰_™Á,«)[€Í±ub!%QÐ–sÃJ¼÷cÛ¦EÕ¢Uœú{… þ„°ùïœð6öbÛÞœÕ0…ç‘2Ç=­û–7üg»p:(s4C}¾6GSØ"ŠiÌå*@ä­
+c›á¼àçL=>ÉDßîû_¤6™—lÐóÚ²žXò$ŸÅîuã¢âk>"tâùa§¸Ú¦»2ñb‘§ùökqä‡<Vˆ"NGéz¸xC¦.q†ÂËù7Ëf9}ÜŠacAïýÙÕ<„6ÍJ ‹²ÿ"F:ê&õ@®¼·¥QÌÚ`'Ë7 ÂmŽ^q=6U7¬ëë<êÙ«çn@¹Â8d•g¿£ÑæÃ=Ÿh¶Ÿ·,Æ±¨ñ,97©úÿ.y¦=Tj…û_j]Ò:òõw÷u‘FÁ 5­ #ºÉßw
+;ü6
+ö0hµCË}ºÂOß(éúôT3enÇ%™4é±dJÑ¤K?Þ.iIEQ6žfð31M}pñ=ä1BYæÛµò~-šùÖî¬‚rE%Ò¯i ŒØW’•¡ä"5»gn‡Ã´ù«áY¶ik+z¨q«S¡ên‹7žäê.,8Â¥Ü—n¯@C§ÊVûª<O™˜HÑ—«Ü¿­æ‰¥?Ò^Óú‘)+eXr”uøÖï‰©Ò2y5T$¿VM>-7 £n\Þý$îìP—#¼6[Ø…¬ébbÉ&˜Hó4NfQ¼YgDJØÆqx÷óx©¹2µ
+P“k†a!Ã­a_=ŽQÏlïÁf	ÇÈ.Ö=LÒ8¼t¨×öž–A¢@4ˆ™œv›Sé=9µ´¢pÎ=±=Ya»X´ÑmvšuÅ¼…4 ÑŽû`íZùB?»Ñ+öímAÄs¨’»Ø}Ú-¬ÇÔ“ÎR|Ym¿¿óä¨–ƒC\Q
+â	xuÅH”ÄÅÂ‘ïï»~#ß½Øýd^ˆ =­WUg®Î•7é(¨(ú%s»”uÖžÎn[u“\	´Ô˜G…œ–¯k~»Vò×Oø}Æÿðnò}@ýNýW|#LÎp1uøæ56”²c7,2RœDn=í7¿ð¾Z~âÑº¨‚qIŸºŒQ°ŸÔÂíwÏ$‘1ã-é¸ËAQNŽÞåùµ8¯«#îÉ,jöòÅ=[öYÃ­6Uõ z°Ó;‘Á„¹f}7²·ãß°°áÆ:ÂÄÖâ€ÚÎš²"!±ôáŒƒçOûã3ÏšrëITliåË¬Ñoª¶ÁÉUºaÎ}1o~€ 7O	>#-ßE8ÜI˜³æ B¦‚Rª€$“†MŽeîZ_†Q†#ËÌ¢(ÑûÑyK'µoõBÖˆÁÁˆŒ¯$ W«ÚçððMße¯(gÝ¯”ø¿Þ œ‡ÌÐûaFy‚©§–´E_<_ôŒŠ±ÅÏDÅêxSp}iî ü•6’:bT)'Ç‹{Ü!ãà^lÁ±mµvyÂ|}ñrªh‡Ä÷FBaH|=á½ZMÙ˜Î®ÿjf^6óý¨ZIåïM ‹ª[¹>yh¸›åna¿Õ&0»ŠÄOºµ:W øm)Å©ý•ò~t+î¨l¥!@Éé@r­‘ñê3ÍVƒ€0	“{È }ñ ýTÊ‰Ô®W× òÎÒ¿|ÀZáÏHC3UxÌ.¿JØ_çòÆ ­&ã^§uHØF÷iÃ=l©Ûs{v)á„xFâ,hhæœg¡iVa,)}pÊþ[–Â5ûjö_Ì·"¿V—à;›bçß^,&Ê·¡¾û–0€Þë_ö'î©þüÆ¬öRÿvŽ„Å:­Ö§¢ˆª®KÊ¨QfRBò5k
+ô±Ow:øÎ†š“n8Ã[‡Â8GË	ÂNL6ƒ˜ôqL Œ*&[¹Ø´q&¢ÀbŸÅ9²¨¢áæn³í½O°WGàäœ9?h‡¬m°Ã¯p8'1|¬òÂT‹/P…Û"TX’¬‹¨êäË€B+q,ÑÊ,îFgÉy/íÓ–ßÿïÉŸŠ©B¨g¢O«8f½fŽ¦JýÐ‘²·‘Iøï®‹5ªö±±ü `tíïÅn3H4þïÎ¡Ñ5-½Ã÷>5¤"Bì¡‡å,ßãŽÌGÌŠƒ»”Û¨ ËèPªJ"›.ê$¤N€­’ÑûYÈqïþ“äJ3-1¹Àk({æ&1Ân\4§$þ„Px£þ]EÎRZ\–Gí–‚á)VÃ›^Ú LeÉVw1³ïpêqÒ¿2‡c¿ÃfXZÓ(¡8ØfdgDÒýb6.e:D–	¹ÀkE]X|¯´ï|ç	¯Ï8NÕkê¦¸ Çw=øÍ~•B`
+n¨*DCVÖÆLÇ¡­½c×Uß¯ÏZÀÇ wRbs¡6å4;V¢FIŒ@ ÝL6ò_já(eeßìÌšÛ;‡çYGúBôpáßú³3Åå´	J}ý†™Ì9õ³«S¡lYÃ¤š#ö•³k Öf§Rw­Ic¦Ä 96ùkªå \Üãšñcz¼i*{gÕE©Heá’êr¿÷LJ¯ÿb¼1â	ÎDã}ŸÆh>/Kž6Àh-zµo¥_w}sœÒÎLÖ“w°óM¨)EÂ²”¾¿ÓCx…ÿÝÊW5[" ÄIÍ
+.•ÎÏÚ%!ºWü3û“úr0Ó×âUIwöü%,SˆgÍ¼gPÆÎø–¿‚±ÿ½0ƒžX&Ú×ý›
 
-            echo "### $author $hhari $MYIP @rmbl" >> ipmini
-
-            sleep 0.5
-            rm -rf .git
-            git config --global user.email "${EMAILGIT}" >/dev/null 2>&1
-            git config --global user.name "${USERGIT}" >/dev/null 2>&1
-            git init >/dev/null 2>&1
-            git add ipmini
-            git commit -m register >/dev/null 2>&1
-            git branch -M main >/dev/null 2>&1
-            git remote add origin https://github.com/${USERGIT}/permission >/dev/null 2>&1
-            git push -f https://${APIGIT}@github.com/${USERGIT}/permission >/dev/null 2>&1
-            sleep 0.5
-            rm ipmini
-        elif [[ $kode == "M" ]]; then
-            MYIP2=$(curl -sS ipv4.icanhazip.com)
-            rm -rf /etc/github
-            mkdir -p /etc/github
-            isi_github_info
-            clear
-            APIGIT=$(cat /etc/github/api)
-            EMAILGIT=$(cat /etc/github/email)
-            USERGIT=$(cat /etc/github/username)
-            hhari2=$(date -d "999 days" +"%Y-%m-%d")
-            mkdir -p /root/rmbl
-            cd /root/rmbl
-            wget ${REPOKU}/permission/main/ipmini >/dev/null 2>&1
-
-            sed -i "/# VIP/a ### ${author} ${hhari2} ${MYIP2} ON 999 VIP" /root/rmbl/ipmini
-
-            sleep 0.5
-            rm -rf .git
-            git config --global user.email "${EMAILGIT}" >/dev/null 2>&1
-            git config --global user.name "${USERGIT}" >/dev/null 2>&1
-            git init >/dev/null 2>&1
-            git add ipmini
-            git commit -m register >/dev/null 2>&1
-            git branch -M main >/dev/null 2>&1
-            git remote add origin https://github.com/${USERGIT}/permission >/dev/null 2>&1
-            git push -f https://${APIGIT}@github.com/${USERGIT}/permission >/dev/null 2>&1
-            sleep 0.5
-            rm ipmini
-        elif [[ $kode == "B" ]]; then
-            MYIP3=$(curl -sS ipv4.icanhazip.com)
-            rm -rf /etc/github
-            mkdir -p /etc/github
-            isi_github_info
-            clear
-            APIGIT=$(cat /etc/github/api)
-            EMAILGIT=$(cat /etc/github/email)
-            USERGIT=$(cat /etc/github/username)
-            hhari3=$(date -d "999 days" +"%Y-%m-%d")
-            mkdir -p /root/rmbl
-            cd /root/rmbl
-            wget ${REPOKU}/permission/main/ipmini >/dev/null 2>&1
-
-            sed -i "/# RESELLER/a ### ${author} ${hhari3} ${MYIP3} ON 999" /root/rmbl/ipmini
-
-            sleep 0.5
-            rm -rf .git
-            git config --global user.email "${EMAILGIT}" >/dev/null 2>&1
-            git config --global user.name "${USERGIT}" >/dev/null 2>&1
-            git init >/dev/null 2>&1
-            git add ipmini
-            git commit -m register >/dev/null 2>&1
-            git branch -M main >/dev/null 2>&1
-            git remote add origin https://github.com/${USERGIT}/permission >/dev/null 2>&1
-            git push -f https://${APIGIT}@github.com/${USERGIT}/permission >/dev/null 2>&1
-            sleep 0.5
-            rm ipmini
-        elif [[ $kode == $Key ]]; then
-            MYIP=$(curl -sS ipv4.icanhazip.com)
-            rm -rf /etc/github
-            mkdir -p /etc/github
-            isi_github_info
-            clear
-            APIGIT=$(cat /etc/github/api)
-            EMAILGIT=$(cat /etc/github/email)
-            USERGIT=$(cat /etc/github/username)
-            hhari=$(date -d "$KEY2 days" +"%Y-%m-%d")
-            mkdir -p /root/rmbl
-            cd /root/rmbl
-            wget ${REPOKU}/permission/main/ipmini >/dev/null 2>&1
-            if [ "$ADMIN" = "ON" ]; then
-                sed -i "/# RESELLER/a ### ${author} ${hhari} ${MYIP} ${ADMIN} ${TOTALIP}" /root/rmbl/ipmini
-            else
-                echo "### $author $hhari $MYIP @$LIST" >> ipmini
-            fi
-
-            sleep 0.5
-            rm -rf .git
-            git config --global user.email "${EMAILGIT}" >/dev/null 2>&1
-            git config --global user.name "${USERGIT}" >/dev/null 2>&1
-            git init >/dev/null 2>&1
-            git add ipmini
-            git commit -m register >/dev/null 2>&1
-            git branch -M main >/dev/null 2>&1
-            git remote add origin https://github.com/${USERGIT}/permission >/dev/null 2>&1
-            git push -f https://${APIGIT}@github.com/${USERGIT}/permission >/dev/null 2>&1
-            sleep 0.5
-            rm ipmini
-            wget ${REPOKU}/license/main/key >/dev/null 2>&1
-            if [ "$ADMIN" = "ON" ]; then
-                sed -i "/^### $LIST $Key $KEY2 $ADMIN $TOTALIP/d" /root/rmbl/key
-            else
-                sed -i "/^### $LIST $Key $KEY2/d" /root/rmbl/key
-            fi
-            sleep 0.5
-            rm -rf .git
-            git config --global user.email "${EMAILGIT}" >/dev/null 2>&1
-            git config --global user.name "${USERGIT}" >/dev/null 2>&1
-            git init >/dev/null 2>&1
-            git add key
-            git commit -m register >/dev/null 2>&1
-            git branch -M main >/dev/null 2>&1
-            git remote add origin https://github.com/${USERGIT}/license >/dev/null 2>&1
-            git push -f https://${APIGIT}@github.com/${USERGIT}/license >/dev/null 2>&1
-            rm -rf /root/rmbl
-            rm -rf /etc/github
-            clear
-        else
-            echo -e " KODE SALAH SILAHKAN MASUKKAN ULANG KODENYA"
-            sleep 1
-            key2
-        fi
-    fi
-}
-function domain(){
-fun_bar() {
-    CMD[0]="$1"
-    CMD[1]="$2"
-    (
-        [[ -e $HOME/fim ]] && rm $HOME/fim
-        ${CMD[0]} -y >/dev/null 2>&1
-        ${CMD[1]} -y >/dev/null 2>&1
-        touch $HOME/fim
-    ) >/dev/null 2>&1 &
-    tput civis
-    echo -ne " \033[1;33m Update Domain... \033[1;37m- \033[1;33m["
-    while true; do
-        for ((i = 0; i < 18; i++)); do
-            echo -ne "\033[0;32mâ—"
-            sleep 0.1s
-        done
-        [[ -e $HOME/fim ]] && rm $HOME/fim && break
-        echo -e "\033[0;33m]"
-        sleep 1s
-        tput cuu1
-        tput dl1
-        echo -ne " \033[1;33m Update Domain... \033[1;37m- \033[1;33m["
-    done
-    echo -e "\033[1;33m]\033[1;37m -\033[1;32m Succes !\033[1;37m"
-    tput cnorm
-}
-res1() {
-    wget -q ${REPOSC}/install/pointing.sh && chmod +x pointing.sh && ./pointing.sh
-    clear
-}
-cd
-echo
-echo -e " ${C}â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”${N}"
-echo -e " ${C}â”‚${W}       MENU PILIHAN INPUT DOMAIN VPS      ${C}â”‚${N}"
-echo -e " ${C}â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜${N}"
-echo -e " ${C}â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”${N}"
-echo -e " ${C}â”‚${W} [${C}01${W}] Domain kamu sendiri                 ${C}â”‚${N}"
-echo -e " ${C}â”‚                                          â”‚${N}"
-echo -e " ${C}â”‚${W} [${C}02${W}] Domain Yang Punya Script            ${C}â”‚${N}"
-echo -e " ${C}â”‚                                          â”‚${N}"
-echo -e " ${C}â”‚${W} [${C}03${W}] Domain Host & SlowDNS Sendiri       ${C}â”‚${N}"
-echo -e " ${C}â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜${N}"
-until [[ $domain =~ ^[132]+$ ]]; do
-    read -p " Masukkan pilihan kamu 1/2/3 : " domain
-done
-if [[ $domain == "1" ]]; then
-    until [[ $dnss =~ ^[a-zA-Z0-9_.-]+$ ]]; do
-        read -rp " Masukan domain kamu di sini : " -e dnss
-    done
-    rm -rf /etc/xray
-    rm -rf /etc/v2ray
-    rm -rf /etc/nsdomain
-    rm -rf /etc/per
-    mkdir -p /etc/xray
-    mkdir -p /etc/v2ray
-    mkdir -p /etc/nsdomain
-    touch /etc/xray/domain
-    touch /etc/v2ray/domain
-    touch /etc/xray/slwdomain
-    touch /etc/v2ray/scdomain
-    echo "$dnss" > /root/domain
-    echo "$dnss" > /root/scdomain
-    echo "$dnss" > /etc/xray/scdomain
-    echo "$dnss" > /etc/v2ray/scdomain
-    echo "$dnss" > /etc/xray/domain
-    echo "$dnss" > /etc/v2ray/domain
-    echo "IP=$dnss" > /var/lib/ipvps.conf
-    echo ""
-    clear
-fi
-if [[ $domain == "2" ]]; then
-    clear
-    echo -e " ${C}â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”${N}"
-    echo -e " ${C}â”‚${W}     MENU PILIHAN DOMAIN BAWAAN SCRIPT    ${C}â”‚${N}"
-    echo -e " ${C}â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜${N}"
-    echo -e " ${C}â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”${N}"
-    echo -e " ${C}â”‚${W} [${C}01${W}] Domain xxx.rmbl.cloud           ${C}â”‚${N}"
-    echo -e " ${C}â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜${N}"
-    until [[ $domain2 =~ ^[1-5]+$ ]]; do
-        read -p " Masukkan pilihan angka 1 : " domain2
-    done
-fi
-if [[ $domain2 == "1" ]]; then
-    until [[ $dn1 =~ ^[a-zA-Z0-9_.-]+$ ]]; do
-        read -rp " Masukan subdomain kamu di sini tanpa spasi: " -e dn1
-    done
-    rm -rf /etc/xray
-    rm -rf /etc/v2ray
-    rm -rf /etc/nsdomain
-    rm -rf /etc/per
-    mkdir -p /etc/xray
-    mkdir -p /etc/v2ray
-    mkdir -p /etc/nsdomain
-    mkdir -p /etc/per
-    touch /etc/per/id
-    touch /etc/per/token
-    touch /etc/xray/domain
-    touch /etc/v2ray/domain
-    touch /etc/xray/slwdomain
-    touch /etc/v2ray/scdomain
-    echo "$dn1" > /root/subdomainx
-    cd
-    sleep 1
-    clear
-    echo
-    echo -e " ${C}â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”${N}"
-    echo -e " ${C}â”‚${W}   PROSES POINTING DOMAIN KE CLOUDFLARE   ${C}â”‚"
-    echo -e " ${C}â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜${N}"
-    res1
-    clear
-    rm /root/subdomainx
-fi
-
-if [[ $domain == "3" ]]; then
-    until [[ $dns1 =~ ^[a-zA-Z0-9_.-]+$ ]]; do
-        read -rp " Masukan domain kamu di sini : " -e dns1
-    done
-    echo ""
-    echo "$dns1" > /etc/xray/domain
-    echo "$dns1" > /etc/v2ray/domain
-    echo "IP=$dns1" > /var/lib/ipvps.conf
-    until [[ $dns2 =~ ^[a-zA-Z0-9_.-]+$ ]]; do
-        read -rp " Masukan Domain SlowDNS kamu di sini : " -e dns2
-    done
-    echo $dns2 >/etc/xray/dns
-fi
-}
-cat <<EOF>> /etc/rmbl/theme/green
-BG : \e[37;1;42m
-TEXT : \033[0;32m
-EOF
-cat <<EOF>> /etc/rmbl/theme/yellow
-BG : \e[37;1;43m
-TEXT : \033[0;33m
-EOF
-cat <<EOF>> /etc/rmbl/theme/red
-BG : \e[37;1;41m
-TEXT : \033[0;31m
-EOF
-cat <<EOF>> /etc/rmbl/theme/blue
-BG : \e[37;1;44m
-TEXT : \033[0;34m
-EOF
-cat <<EOF>> /etc/rmbl/theme/magenta
-BG : \e[37;1;45m
-TEXT : \033[0;35m
-EOF
-cat <<EOF>> /etc/rmbl/theme/cyan
-BG : \e[37;1;46m
-TEXT : \033[0;36m
-EOF
-cat <<EOF>> /etc/rmbl/theme/lightgray
-BG : \e[37;1;47m
-TEXT : \033[0;37m
-EOF
-cat <<EOF>> /etc/rmbl/theme/darkgray
-BG : \e[37;1;100m
-TEXT : \033[0;90m
-EOF
-cat <<EOF>> /etc/rmbl/theme/lightred
-BG : \e[37;1;101m
-TEXT : \033[0;91m
-EOF
-cat <<EOF>> /etc/rmbl/theme/lightgreen
-BG : \e[37;1;102m
-TEXT : \033[0;92m
-EOF
-cat <<EOF>> /etc/rmbl/theme/lightyellow
-BG : \e[37;1;103m
-TEXT : \033[0;93m
-EOF
-cat <<EOF>> /etc/rmbl/theme/lightblue
-BG : \e[37;1;104m
-TEXT : \033[0;94m
-EOF
-cat <<EOF>> /etc/rmbl/theme/lightmagenta
-BG : \e[37;1;105m
-TEXT : \033[0;95m
-EOF
-cat <<EOF>> /etc/rmbl/theme/lightcyan
-BG : \e[37;1;106m
-TEXT : \033[0;96m
-EOF
-cat <<EOF>> /etc/rmbl/theme/color.conf
-lightgreen
-EOF
-function RMBL(){
-    cd
-    sysctl -w net.ipv6.conf.all.disable_ipv6=1 >/dev/null 2>&1
-    sysctl -w net.ipv6.conf.default.disable_ipv6=1 >/dev/null 2>&1
-    clear
-    wget -q ${REPOSC}/tools.sh &> /dev/null
-    chmod +x tools.sh
-    ./tools.sh
-    clear
-    start=$(date +%s)
-    ln -fs /usr/share/zoneinfo/Asia/Jakarta /etc/localtime
-    apt install git curl -y >/dev/null 2>&1
-    apt install python -y >/dev/null 2>&1
-}
-
-function CEKIP () {
-    MYIP=$(curl -sS ipv4.icanhazip.com)
-    IPVPS=$(curl -sS $REPOKU/permission/main/ipmini | grep $MYIP | awk '{print $4}')
-    if [[ $MYIP == $IPVPS ]]; then
-        domain
-        RMBL
-    else
-        isikey
-        domain
-        RMBL
-    fi
-}
-
-function RMBLANIMASI(){
-    fun_bar() {
-        CMD[0]="$1"
-        CMD[1]="$2"
-        (
-            [[ -e $HOME/fim ]] && rm $HOME/fim
-            ${CMD[0]} -y >/dev/null 2>&1
-            ${CMD[1]} -y >/dev/null 2>&1
-            touch $HOME/fim
-        ) >/dev/null 2>&1 &
-        tput civis
-        echo -ne " \033[1;33m Sedang Menginstal File \033[1;37m- \033[1;33m["
-        while true; do
-            for ((i = 0; i < 16; i++)); do
-                echo -ne "\033[0;32mâ—"
-                sleep 0.1s
-            done
-            [[ -e $HOME/fim ]] && rm $HOME/fim && break
-            echo -e "\033[0;33m]"
-            sleep 1s
-            tput cuu1
-            tput dl1
-            echo -ne " \033[1;33m Sedang Menginstal File \033[1;37m- \033[1;33m["
-        done
-        echo -e "\033[1;33m]\033[1;37m -\033[1;32m OK !\033[1;37m"
-        tput cnorm
-    }
-
-
-    res2() {
-        wget -q ${REPOSC}/install/ssh-vpn.sh && chmod +x ssh-vpn.sh && ./ssh-vpn.sh
-        clear
-    }
-
-    res3() {
-        wget -q ${REPOSC}/install/ins-xray.sh && chmod +x ins-xray.sh && ./ins-xray.sh
-        clear
-    }
-
-    res4() {
-        wget -q ${REPOSC}/sshws/insshws.sh && chmod +x insshws.sh && ./insshws.sh
-        clear
-    }
-
-    res5() {
-        wget -q ${REPOSC}/install/set-br.sh && chmod +x set-br.sh && ./set-br.sh
-        clear
-    }
-
-    res6() {
-        wget -q ${REPOSC}/sshws/ohp.sh && chmod +x ohp.sh && ./ohp.sh
-        clear
-    }
-
-    res7() {
-        wget -q ${REPOSC}/menu/ekstra.sh && chmod +x ekstra.sh && ./ekstra.sh
-        clear
-    }
-
-    res8() {
-        wget -q ${REPOSC}/slowdns/installsl.sh && chmod +x installsl.sh && ./installsl.sh
-        clear
-    }
-
-    res9() {
-        wget -q ${REPOSC}/install/udp-custom.sh && chmod +x udp-custom.sh && ./udp-custom.sh
-        clear
-    }
-
-    echo -e " ${C}â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”${N}"
-    echo -e " ${C}â”‚${W}       PROSES INSTALASI SSH & OVPN        ${C}â”‚${N}"
-    echo -e " ${C}â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜${N}"
-    fun_bar 'res2'
-    echo -e " ${C}â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”${N}"
-    echo -e " ${C}â”‚${W}          PROSES INSTALASI XRAY           ${C}â”‚${N}"
-    echo -e " ${C}â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜${N}"
-    fun_bar 'res3'
-    echo -e " ${C}â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”${N}"
-    echo -e " ${C}â”‚${W}      PROSES INSTALASI SSH WEBSOCKET      ${C}â”‚${N}"
-    echo -e " ${C}â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜${N}"
-    fun_bar 'res4'
-    echo -e " ${C}â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”${N}"
-    echo -e " ${C}â”‚${W}       PROSES INSTALASI MENU BACKUP       ${C}â”‚${N}"
-    echo -e " ${C}â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜${N}"
-    fun_bar 'res5'
-    echo -e " ${C}â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”${N}"
-    echo -e " ${C}â”‚${W}           PROSES INSTALASI OHP           ${C}â”‚${N}"
-    echo -e " ${C}â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜${N}"
-    fun_bar 'res6'
-    echo -e " ${C}â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”${N}"
-    echo -e " ${C}â”‚${W}       PROSES INSTALASI MENU EKSTRA       ${C}â”‚${N}"
-    echo -e " ${C}â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜${N}"
-    fun_bar 'res7'
-    echo -e " ${C}â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”${N}"
-    echo -e " ${C}â”‚${W}         PROSES INSTALASI SYSTEM          ${C}â”‚${N}"
-    echo -e " ${C}â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜${N}"
-    fun_bar 'res8'
-    echo -e " ${C}â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”${N}"
-    echo -e " ${C}â”‚${W}       PROSES INSTALASI UDP COSTUM        ${C}â”‚${N}"
-    echo -e " ${C}â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜${N}"
-    fun_bar 'res9'
-}
-
-function TERAKHIR(){
-    TIMES="10"
-    CHATID="$CHATID"
-    KEY="$TOKENBOT"
-    URL="https://api.telegram.org/bot$KEY/sendMessage"
-    ISP=$(curl -s ipinfo.io/org | cut -d " " -f 2-10)
-    CITY=$(curl -s ipinfo.io/city)
-    domain=$(cat /etc/xray/domain)
-    TIME=$(date +'%d-%m-%Y %H:%M:%S')
-    RAMMS=$(free -m | awk 'NR==2 {print $2}')
-    MODEL2=$(cat /etc/os-release | grep -w PRETTY_NAME | head -n1 | sed 's/=//g' | sed 's/"//g' | sed 's/PRETTY_NAME//g')
-    MYIP=$(curl -sS ipv4.icanhazip.com)
-    IZIN=$(curl -sS ${REPOKU}/permission/main/ipmini | grep $MYIP | awk '{print $3}' )
-    d1=$(date -d "$IZIN" +%s)
-    d2=$(date -d "$today" +%s)
-    EXP=$(( (d1 - d2) / 86400 ))
-
-    TEXT="
-â•”â”€â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”€â•—
-<code> âš ï¸ AUTOSCRIPT PREMIUM âš ï¸</code>
-â•šâ”€â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”€â•
-â•”â”€â”â”â”â”â”â”â” â—™ â”â”â”â”â”â”â”â”â”€â•—
-<code>â”œNAME       :</code> <code>${author}</code>
-<code>â”œDATE       :</code> <code>${DATE}</code>
-<code>â”œTIME       :</code> <code>${TIME}</code>
-<code>â”œDOMAIN     :</code> <code>${domain}</code>
-<code>â”œIP         :</code> <code>${MYIP}</code>
-<code>â”œISP        :</code> <code>${ISP}</code>
-<code>â”œCITY       :</code> <code>$CITY</code>
-<code>â”œOS LINUX   :</code> <code>${MODEL2}</code>
-<code>â”œRAM        :</code> <code>${RAMMS} MB</code>
-<code>â”œEXP SCRIPT :</code> <code>$EXP Days</code>
-â•šâ”€â”â”â”â”â”â”â” â—™ â”â”â”â”â”â”â”â”â”€â•
-â•”â”€â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”€â•—
-     <i>Notification Installer Script...</i>
-â•šâ”€â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”€â•
-"
-    curl -s --max-time $TIMES -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
-}
-
-function FINISHING() {
-    cat> /root/.profile << END
-if [ "$BASH" ]; then
-    if [ -f ~/.bashrc ]; then
-        . ~/.bashrc
-    fi
-fi
-mesg n || true
-clear
-menu
-END
-    chmod 644 /root/.profile
-    if [ -f "/root/log-install.txt" ]; then
-        rm /root/log-install.txt > /dev/null 2>&1
-    fi
-    if [ -f "/etc/afak.conf" ]; then
-        rm /etc/afak.conf > /dev/null 2>&1
-    fi
-    if [ ! -f "/etc/log-create-user.log" ]; then
-        echo "Log All Account " > /etc/log-create-user.log
-    fi
-    history -c
-    serverV=$( curl -sS ${REPOSC}/versi  )
-    echo $serverV > /opt/.ver
-    aureb=$(cat /home/re_otm)
-    b=11
-    if [ $aureb -gt $b ]; then
-        gg="PM"
-    else
-        gg="AM"
-    fi
-    cd
-    curl -sS ipv4.icanhazip.com > /etc/myipvps
-    curl -s ipinfo.io/city?token=75082b4831f909 >> /etc/xray/city
-    curl -s ipinfo.io/org?token=75082b4831f909  | cut -d " " -f 2-10 >> /etc/xray/isp
-    rm /root/setup.sh >/dev/null 2>&1
-    rm /root/slhost.sh >/dev/null 2>&1
-    rm /root/ssh-vpn.sh >/dev/null 2>&1
-    rm /root/ins-xray.sh >/dev/null 2>&1
-    rm /root/insshws.sh >/dev/null 2>&1
-    rm /root/set-br.sh >/dev/null 2>&1
-    rm /root/ohp.sh >/dev/null 2>&1
-    rm /root/ekstra.sh >/dev/null 2>&1
-    rm /root/slowdns.sh >/dev/null 2>&1
-}
-
-CEKIP
-RMBLANIMASI
-TERAKHIR
-FINISHING
-STARTING "$(($(date +%s) - ${start}))" | tee -a log-install.txt
-sleep 3
-echo
-cd
-rm -rf *
-echo
-echo -e " ${C}â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”${N}"
-echo -e " ${C}â”‚${W}      VPS AKAN REBOOT DALAM 9 DETIK       ${C}â”‚${N}"
-echo -e " ${C}â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜${N}"
-tput civis
-for i in {9..1}
-do
-    echo -ne "\r Reboot ${G}$i${N} detik lagi.."
-    sleep 1
-done
-echo -ne "\r Reboot ${G}sekarang..!!    \n"
-tput cnorm
-reboot
+;FOš±d‰“ãX §œêvúÊ	›k#KbtnèéW¢.äV27jÝµ{•SìJ‚<
+Ü:Íò8ùÏ¦ ë—Âï(ÙFË6×É	vý'Í³·–üw‘H˜€„¡c¦p¼‡maj®ö½fsµ±WgÖWy®¢ô|¥Xõ¤#ÉØBkyÃAØÔÌ<Ø’•tÏU›Ò…;¨çŽE“Qœ}î/Uë49ÚDWQ;1Áà.°ã%r{;W)|:(On…/ÿÖiä¨Á”ž îà9}rõ¨A-?„QÚÿ?Ic·”UäûA…T}¾þošh5³ƒË3¬4^0vÆ%ã~—@Åž¬ª=viÚöO€ÌZ2´â}™Šðç®ªO ô®µø|›»K QÂQEç`Ñ„ãéŒdýË(.ùÍœ#9©ƒb¿˜0‹áVª†PŸ¨.ÝöñRÿƒÝ¥!D¹Åˆ¯tÏ²Ï–f¿§µŸÌ•cä@÷Ã­˜í\È%þØï"ðG%¾rÕ"?äÌØ&¦‡¡M˜¨9N-"²ˆÏO ìÑç0VÃ§ö×kCÄ!´¬É´ÕPßoï]´Ò‘Ê…³¸ÈÏñ34¡­«“aÿ!u:ÃTo×i	jBB¶A ¬Hf‚7ß"•ïÅÆ1ói^–{MùÖºMÿ¾]8#Ûy:²%Y	æ“bÅ£Q&ó©·¿ßbíì¸˜áâ6Á¨<ÇQz¹§³b!ˆk–9ÀÄÕ…øu€¸9.ŽXùâY¶#(xß3?`õ™<…À3>»ÔØÀÞÄ{r£¦¬Éý/ÓÈ$ÌEþr¸!AHL
+“¦Z‡×ÙÛz…»çiß§t§/d(–=ÐFÖ@rg7aÒìSðs™Qìz&î äkh¬tÚ3aà	0äóM÷ÈI¤ušµ ÏS{Fé«%hp{ØÍ­÷è],(úõçL¹Mi¶ï!QWÅAPA«ß&‹¶Go\ÊÚ5v”{l òò*³Ý(?¹ 7,$ÃåX£ÖX¦J(Ÿß>¨oÞð}<Ÿ˜Ü´šË¥™ÐFÊ8Ù„êçZ”¾µó1«¦•¦½8Î{É‚Y³ Tâö©–YN´td{³‘þqLs^¯ÚŸžBæŸaùÐnëVÏ±õsŒÌu) ûiYuìüà3õ¡º™DEëSÌkr¯Jê}qJÏU–‘uv¹ÓÅð‚Ö˜¿¯J³Uä»ŠŠ³gD±N‡SN~	Ñ%ºµîbÖè{%jjxø=Šð¯ãˆN¼³rs&ú˜_ßŸcãÆî¯`:YÝª˜@Kv­ZWª•_Ê`à†®ãh}"w=ð™øhÒjáÂ/f'G˜{¥ÙXÚ"ˆºàåF	åSs%›·,-ž¥À@ä¦W=ÁÒ`de‹Î'£ˆ,ï*ÓÂri¨?û.›˜œ¤_Ò[°bìàtç7mïUN}—g fŒëanML<úïÐò)¨Š€;­èÎ<f¬°¥ÔÅr	À‚X\ÓæË3á,Á©âdÔëL·5½Ê×¤D’ÃHr+Ð[MHoÞº¢ä€“>'îhÍ~î}Â¯‹Ì¶†Xº~Ÿ³AÃ€ê°Ñ 'Ç¹ôÙÝö²%²èæ_ø—ÕkmÎŒ^HÆÖz@¯]kñ¨/»ÝôÉNd•›}…Ýäó§3u§Š8âªœ/bMzý¥Ú$,ØvBÈˆÎÂq3kfc9Þ+žY¹‚ó	<0ÛéËbJu~„~òúwäÅä=×!BÁ‡,OÛV—<ksôöÊÜø8ÌÐ±ÆÓ=æJØä`ƒÅIU/¢7»_är™øï3ÍœeñRŒ.¡$çß=M2ñK<ª÷¾6Í{)Gg·ËŒ†*nOnŒßVmëoŸsRù4¸ú¾ú•Z²Ç‹Jª?Wc`:² 3´š†³×B,öïî–‚¿þ­íÙQ¥YˆÿYùmR¬e ß	MŒØÂ¬âW1œ—®LkØžBVì,`¾>¸F>àú­=,Rå]±©ÀR!Yû’`˜h©]’}‹¡;Óƒ÷É«k—_ù?²¤ëNä‹?¥¨œÝŠ/d«×d´#66œJr^EªøO.¥š£ŠU¬ª»ÔYÐ²;;÷ytâÁ¢Åh»U€<U'Ú<„Öôa" õªG;a†0#Cb#žm“)K/>TäÏÃåñö¥‰9q³„Þèåù¡DNtV÷a&å§ž¸‘Ô
+£í·YWˆDuQîôwÍ Ö2õ(ÖÓXùB¿y¤J>{æ[pÞ¼o¢£‡—Ül¦’æ)˜>¢x•%{#c.òT”Ó¾)ö³N—ØƒùÛ“å0×ŒÑ«äêý·¿ÿ¦S·Ð¶ûw—èHù¬tF¦ 9ÄÉœ†½ËÂä”±%áÓÎn,Ñ:F©Éµ%2AÍZržx½99°AööÍ§²úZ˜ë‘ZI¡÷ñö˜³‡6s$&ûìÑ¿U¼4ayG£iá‡9"2î!Iôvéj=òÊqì5Ndû¡øøLðéÅLB±%!ÁxÂÒg‡)jTÍ¥Ü;[C·I{Š÷^)+¯¬¢æù	¯Òä¿ÄÑÑO}U /uì­üøm±Ic5ðG[µÝ–®e8*óWéÝßýˆ©ˆÏBÀ> ôÃèêLI&ƒ“7X»ÈµªF'Ð‘E'Z¬s8ÀnæÏÝÓ¢6æB CAHlcd™5&;NüUzD2†ð÷W ºxµùú$åÙf[aÛÀ.·~ÆäQØ…+`¶âBMÕ£é±8Õöåªê—ó|—<ÔE©rÁ"yrÄ÷0JlÈÎïÿ#·œ¸“#y=4«†KŠA€U³-œ8^âÀÛrïÄËý}ñ€5K½ß„¢ ‹VÃ^ÔƒŸfÑkèU‚ÌVå/a®?ÈÀ`Q¨àzäEß©F&yåJUm6ûzí€ÝÒ_!Î…­î9ºÁ-ØUÙñùÅ¸–Ø»±	f|ïö:àþ&Ã!u]’=‡<½Q«ô3¿å°07¦W>\ÞšÄ›Ãùq"zÏJ2+Fý†P™û‰e¦Æ‰5~c]ø?*È¸‹9ZgÙ†/D‡µ‰$Õ7Çê™÷\cÝ²tâüyÛ-Q ~‰t©Pè	±ÈÄ‚®Gzd™Œõì$ Äöð4öþ;{ ¡úœóaë–ñÏñJ6)c«dvoCÏ|ïMGJ	º¹›1{NõWÑ<À¥º†?ÐËÊ÷ì{ì‰£Ù1\<¥¿2-@Á°qŽ­Ô«h§ýR&hÚ~Ã²ÒùK˜ðüëjÀ&—¾Å$3üjrnü6[T1âÖãæz}GÈ÷©'‰¼Î<œ(0=ŠFÛÝµIBÛ—’ÛAP®ÊÅ#JßßS	ÕkSù¯<*©1'/`U^šú.ˆF‚OCMŒsõIâü+NRQ—_Ö©ì¹i1Çä“¥¥uÜUžMmªéÑË³à´úaDÄ÷*<vÍ!ÆûàµF“
+™#×²Y~³E(É3¢šü<ßÁ—]Õ¯öM¤™¿•Žã¸ˆ|ú÷~´gë€“ôØThÐBù6IS)^;@b!&¬ ð\÷c1Äûlø:ŠÍ:;<ÿ_d}3É(Ø‹€²š¾&Õ¢>ô]uÌ!~.úcCeúóTÝ0›2¼®GÏg%âj<^@tàÄ+©x„®#h.9
+K;Õq…¼BEÝfžÀM­›Ó«²¹íEž2ëÔâ_ù~îñ†x4¹@K•€³Òù¿ÕFbhsÎ8«rO•ö€¼>Û'ð˜È¦2ÿ.¼Ëø*ê<m‹<–5ªNÄøa"Lmg8þåô¢Å‘cÞƒ6¥¹I¤nç·_æäËÿÄÙ'ÜÕÀŸD°õ(?ûdÛ*N~FRhÀF
+iôÖÇy³Lak[:ƒü^dÇÕ¥~×¡ãFüý7@ÒÞGWç9Éòkš²rF´Æ°¢ÏHùuwîOre†vþ4@×0µg˜gô[Û;©ðÌkã8_‰ebfàïAêÎÇ­T¯¤c’‹£ß$îbN3¥Zá•ª …f[ÈÓrò¼~~ç¸y¤A¤Ha+þl9;‰³Ž@ÛïâE1)7qgHîÜ4¾P]½¯T¨G¥B@,ÙÞ±neOžzøèëÃâ®ý“(ÊB#{Lôui¤‚îGsÒ÷Óf§%îÉÏDù±ÛáÕ‚Ù±)/‹~ÝŸµ~Ÿ«û|=>,/±RöÙOWe(sÞ+,UDÉf5ÏÅö­ÞMW’xGÜásS£˜˜Øƒæ>·oD—á¨rªÖ[Ä +~ËŠ†×è ‹û²:)–ôúHºÜÒNéÈeUØ&Jyo¸M`p$€]žRÑlyq-Q«Åb"Î!z¿+ “÷÷ÓãÀñ2ã6ž 5ÏI Î5{½(šƒÛœl²ÙEÔykbK3ðÀŸyž´]kÜãÕkyê†],HÓîaªR-ÀG€Bßƒ!?\Z%hhV+ t7ó…æµsæ+®_mVÊ›ñ`3ÚS´Ñ½G—á`)9ªX9S|=>pÛ›þq[íÖP{KÅDéËSùXHSe×‘%þÚL÷òN¦ÂœH‡jÕúþÇËY–o³gÕo‘-jòÿýÑ7ÚÞÈ Õ”+ÿIJ‘¹„(–Ò#K%»<SóQÝw·æ©s.Ëþìø×’LÍû†xbtCR«ŒŠ—T&«ãBÆÌo½‚A¬rà }¤Æ“. ¸XÁtÂíìëÖÿi-¥é\@½Ô¥÷Òï“mš…! xDg3Û¨£ŠÆÙ´³‹ÒÏÂº¨`›[B@PÌÃÇü‰ÊÿòU#à¤{Ø×5ñMÝ•¸þç[¢_|C·H™ ¯‚¹Bgg|Y_$
+òü}é¹õ€ÂÄàäAÅÆ‚Ø µÙæ×ccÀy*æÏzoÃþ¦'šÀM	K#6$÷÷q»š_:eØ‹õIý~Àøü’hP‡kô‰³2P“ ™·_:->ðÜC¡÷ýÕ1‡.>Þ€lØš¯ÂA]ý$8~N’2fzq0^âè§ñå"ù„g'EWÜ¢bá3H¸?L‘ðZîY¹¶óLÞ°ÒlõH³w” dÏxæ^oÂ	¯µ¤1÷ûÌŽI
+­	Ð¢”—Á¼`9Þ›Wó¥‚cä…
+Åùý9#½¹Œ($S—•²yd(Ì…	0TÄsÙ±i…Û(´¸ð†5UÛ=¬Âšks	Y¥r*ÞÔ,³šµ+¼ÔÔq‡Z”!«¤BŠæ‘7Íxâ4´}N3<«BF-ÈH8XîÌûOb˜+kÖwÖZ+7S²®‰!0{ŸP}Bµi›Q)%yg¤]¢ Âq:H$@UÓö–ß,²BBÜ¢¥Œ@åºXÌln·P‘¬,IÐi1\ó´Œåò›òôFåi1G¾¸Ä‡—ØÝÆ!Éšë@ÖŽœX»mm‹'5S®îÔªlÜ…Ý…ˆúa”jsÐÐT‚#ü/}¥F|YÊÛûá’iBU
+Kô;ÖOMùv!…„¬ëâÚä±jÄ¸š 2½-5î5=¨xï/­œEØS€;ÕëÛ{sl³:ÀˆáOz&‡³£”Í¸dÙz‚(ˆä5F–Ü’ë†Ææb«xY\´ŸªA]ïq“Îù„%†° Òm\<~F™G‡©@T™9I\O‘<ñ¹2ò(ãÐäú
+´ íÙXw¤D£7õ5F¦äò~Ú9Pý¹êÅ¤B¹ß×@ò;Å–‡<4/ÔÃuÄöá‘<2È^ÉO(®^’`¾óÚš†å²Ä›¬äUª~Ÿ.ñt‘ƒ%B¨xˆ³‹Ùœ¶”ï†IRN¥\’š2w	žÙ¥. ¯ù	>Su™%+ö¤×³½Í2œ.K¹¤÷P«Q× ®„P¼š9pç7jIë…¿'¨§'ƒ°ââ(QßzÀ¬ÔÉÝí%Ø:HÊúž°}Üj3Øx±ÂÌòk÷Ô÷PB£**V)~ö±•Q‹ç
+¶ží#K¥ |»}MTX9Ë~xÖ\ÝÔ¡àµ1ž$> ©çá/bQ_ò5¬—ÒÃy¶¹£Îí#&ó‘ýrÍFò!íXwËÛÃüÚ…k° Ü'› #’OJ­ê—?_,èX[ðð.>”ì¿÷bLH²ZÂ_ÆAûÚLžÀŠkŽ|¾qÍz-uH/Ð~o=¦‡Ö¡Ê=ËòáÄØkUÏFâ0-“_YÅû¶•9†3^®®¿Ÿhˆq<ŸbdÂ_¡\^ŠÌ2µÈ‘ù0z®©,£’²5&¬óhéÙ	¦L–+‚{ôk.mØ•;ªÎ%NàÆõÜÕ¯Áê¼í1O‘‡ê:ŽSThë<ïô±É}:^ÈàÇ]ˆýœª¿YHKÝyl¦•Ñ|øvç¹l°£¡¾XyÔ¯ Rïèâ(ì¼êr"P	E“!UXd#ƒùDN¬Ê®lä5¾· Öš,ª.§˜åÎ[¦yÿ>’Ã¯ÔÌuC¨$µüÖûgqZ’Ù3+rªaS s×¿Î£Nä¾¨cQì	W=>©|×ÖT¤wè'X‹ƒuA;0rüÙu üW'oÑe,d )þ>%<080aøšR_¤Qcà“í¤cµpÊÄé5‰â×¦³„fô’;VtGõó~/¯æ¼«õç‘Ê»:¨ø>€‘wjmÝ#ìkdUåAäæòÂ¤¢5ôo×ˆ…Ò3¦õKº•`Ò.xzÍäDÏú5æób¯èHþœ/×  >öZH eG)ïNY}$7“S©P‘gáP$ë>yü/Öñàà#ú©‹g¨rkMõ\ÄG†DÛáˆA ÀNÞÑ¤5¶&óNµ¿zífAÝ(z#Qâôª’Ÿ¢-×ì»ÙÔ\Lqù¿ÀŸ•”s++ÙŸ{_	¶ìÿ_œÉÛUim‹8Op,Ñýo„±[G,£"F2mZ|½o; Ÿ^• ÓHŒÜîÕÀª†¦+Åž6=žò&½Rÿ¼¥¥tD­Y$\˜KLSPP£‘ÏìmÀn(T~øšÍ ’îÊ(’oð‰ú‚>> ®=uÙK°…bõƒ¸±òíLŒè&/m
+ß–Ù>´eô1ÿîxŠ–Otèxo×bg–D™ðõ×ÈY]N0Š	,5–Ö¿ò
+ž·òe!^ºRšõÀs’® òØ}T×SÐ“¥xÙñ…Z_>N¨©Nô®Ý^¢wé/3yVÎ×fH¿)#«V°Äž·­ðx"Î«"?èr­û,PÏ„ÅžÚ°C÷sBy`‹©ZœJ½4	Ê.¹D¾ *î(6±Së4ðÁNéÕ™LsRYÖYéñ&>Ïö¢½x%JK¾@˜<„ZÊS~Eb£^$ÉÚþ»œ=ßIŽä‹jÚ KÔT Ðœ„(úÇ¾‰k±Å6e|`c·¹‡ÛªD*È+Ciomw¥ßÂíá?_XDA5&á%P¶ôÌÚ÷+¸¡Â¥G·q,9Ž·=Ñ/iEÓoåugÄR;jš"‘Y|¢BÀ4nz=AðçÛâÜ†é>ê=LožD!-]jYw°ÓÉ*—M§—zcØ>é’ÅÿIråÞéBäÛ‡jæùÊsìˆ™Eòûè€*’‰Ç”E¥@Êj¡Â«4”æí1¡_pAd•„€O´`;#,‹zh@)ÁömSˆe×Rm×–KöO­d<Ñ‚ó°Zg¤ú¨L&ØqåÝzM¿bÿáávÉ_ùÇ¡KIDê:6S§õ¼ÔáJ(rŽ4>s:¡.ÆNù<ìÀcgM¯¤wÏ]ÊÇ§é¼3q¶¨ÌÄWýßg†Vx–þqáÉQO¼•º+qK7š¬ÞGíÉkdÿ¶„‹lûV‡üChªå°KF?~ÑDš#¼ÒR¾€€i;ªäkY(Äðéÿ©ZpÁ¹’ã•Fì>ý²»¨=Æ*²âhuøPßëÚ(mkÒÎÜ^ðäI¦7ÖZ–2T´kTV=‡cèÅä#žaleõ_9Ën£nn†_ƒ¹êðy®‘¿îì=´ÂbõX¢Æ"î•–TGÕ‹É!L°Ø~jþ‡vÖÅwçÖÜx)­Ížc¢Âåó1ö¨êÊ*ž™äAèÙŸ×N¶ÖŸv˜všs¸øˆNÂbì’ô’–—µs=˜Ò9-_ˆ§ç·‡ëT„ß·¾H‡Ã®¤ÔQËÍ8ÎyÎtJ²®à“—È&Èoµ÷zÈlšÌÍ/ý¶ñ¼Â—d/JQØEâÅ9)4r@{:Ä²|ˆ»ˆma*lôz˜òV³°$u!Wg#ºC®ÎhíÜkQ\•LÚ“¹ä'K‹rX1ÛêùµK«O±>	Ä77ÇÚ(U›Ø½£Ô9è‚÷BGb;ß£ýÞÕ°K˜6"è²<\vïjTÄˆfhû&¬5ÐèîsM¦ë¥‡#ã2,²€RÅ½Ä**@§ÝÓ
+&Å›e…‡VJ¹ÈÞˆ¾RƒÚaZ&#€¹šÉNU‡“d†¿‡Òý5×°/ø¡fúk½„ìßíOðï°h&|=iÃåb[{bÃáºž‡Öm±Aþ²Ú~Â¦3DFSóû9;¨žC Œri½-Ù¼2<—²#¤°YIË½ÿ
+*ábréâÓ¢‹XîwŸTEk¨õ5^×ÿuÎâ,{[1å¦ nû†Ú€‘m§í
+¾JI…:«òœÇ¥c:6æØá À¥i}G,	DíÌêŠGy³¤X†Ð/A pŸÔŽçn Ž!pêŽ–}ùø\tõ¼”.ñÑ›f62è$ß'£—Æ©íl•M!Æõ?VIn˜„NòÿœŽi-6¹¨QÈpéøTÐSgosIKhq£ùÉÈÖª”fÀíIÆêÈb]&Na…CöZw&Bâc±¿8üÔx‚¯•”;P	T@çu¡óñïè”1¢R•±.&QÇÀìWÃî¤óÙ‚kzl:ÉÀQÀd'ÿ«‚J•Ïéo‚‚ÕýqúgOyí×õ ÄÆn$Ñ›Ýô›C¥ÖekZ£´9®ôˆ#s•|Ònê;ù­±è˜Ï\ußÿDY- “r<×`73^ MF3ggýÌÛq.÷«šŠµï8fâ÷[ôIsƒ§rØ²AinÔ;:Ÿ[_:ÐÀ«þCüé6yðË?ÊZ+`ü•þ‡¤þuUÓëZxzöÉÙ²Tþ^UA#U-õƒ\âÿ}†è¡WŽ^/ë¢%‹YXmï–+kŸ–1säÊ­®cî¿ÿpcMšºW®ƒ··ÿ¢ÓÁé”Gä•lvÙ0ILRþk­¯Ú¤ .þvÒäŸÌb<h”%åptó~ŠU»NÁ¹î&–i±Fó‹÷úùóQ´nô@6¡‚†Žšg¾I8ù[A¬±ÕXŒé¯jç(¦ÿ©>‡»&6WÜÁŸQ(ºï™Ä¶2†‘\M™†ƒ
+ ÛÔDÌDÓˆXÅ7L´,æ<³Ù3uN‰šÛœMW-¨mL·¼ç—”ú½»ÆYP4ÿiÀ©jS`ÁŒ¦Y(òâú¿¡#e‰`pA ­Æ’1
+Ÿ–)@Ó}òSœþ”y1±b{/QtØŸß°ÁÝG¡u­CµÞ[ßeý½s÷„^ˆJáydõ–u;^—ñð~÷H_Üó /rËõÅ$ñc/ÄGÛzñÚaš”‚f×ÿŒ­ØZ—žÔùù/°O@¼zéQYÅ¦|·¡™2ˆ=ˆuÐ–…iX½«‹yVÍƒŽOu.Ú Ú~ªÝœje¡ØÇoüÄ
+T¤ß¢¦ž–”Âæv]ì.ŸÙó$Â¢È|’çÛý8	ÚïõàXoB:îkÅµ¡Ùc‘Ù‹LÛl×üÔ‰î?ûÈ“PÐ6NÈa€¥Äó'¥W#/Ä¯îbŒw`¡Â‚Õt¹Yš¦ÅÐÍsø×òAÈ¿© .ó“o£©	X`ä‡Yè‰©)o»ZðÚ@Œ`@êØ„0{lº‘dÁe	?ED«ìçáßQþœïœjßØ–†nÞÚ¿aêH›àdN-µËeº¹wªtØ
+Àˆ³ùÆKÞ= I-ø:©ÚàÕÔ:x¹$´g%9|úWŠª^×W^Ú	¸{¤¤ï£“žSþ,¾+ZµÐÿÙaî¿w‰¨¢PO¢ Óx€ª:©D¼ÚÒp‰Ó~‰þá¡¹‡ò†‡¥œ,V ¾GàÐCê“Æ9……·gažë¬úhö/¿?óÕ¾í‚i*ëçŠFZB·ÂL·=Ç)±×@"Êbió°Y‰kp4£û¸f1À¥nß©_U§N·¸X´Ù÷#tK'ê=[Á4›øk€A²¢hz«{
+ÞtÀÀYO`1j„L£ÅÏTåû>à˜§A\Éœryá‡ÀäNS]ÙãY`ìoïàyé?šÌ%;¤ÐÎæ#þ‡òã¥ñê¤bÞ)šÊ»;>…Ê½ñµ¸%hEó+÷¨T¥B’ruîú„Oq¤Á_@¿Â±dŒ'‡Y ý£[hÒVò-x<”G8¶60m½Ý6.±)_™„vÇ’UöžÈÑ(	+z7zäð#I†ÁVï¹$ê£;ñ¢æ|¸Ê.UàÂG•|9mëS’ÍMÿaÞBoµ3kÛåí ” ›Ø}þ‚ê7W+=7£^ëÄZÓÙØ?á„2Kgb¢‚lviKí¿fÐMGïÑX8ºê;ºÓùø{Îïœ0s‹|­C,×¶lÄÕ Ðè'ÎÿpªÍìí65pÇ¤§Ó‡Q%nÌ¹ÆMžÔwœ(ÚÂbžÎbíÚI‚¨ù{¯n‹~¦°f2¸YÐ+thUv¾Öº™")+æØ¥pÿWõ–ÊÉ~æ[R<hõ>@Ø¤L?­a¿çÌ¿ólHc.ôƒ5V}#sd¾5¦¼ß@±cD86¡Þ®ÍTuÙÿ,!#dñË+toÊ} “Ñ–‘~mä6ª°ýk e…ÜeÜàxðWø”pëŽ$šÎ0Ò<ÖíÚ`·cîYÛY„<Ìƒ1‡iê°(ÙB]¿·Ë^[òejÌÉI…Ú|´1}¤_ç|`UAÈ
+˜Í¢.àˆ·4áç©!Ï'¨·çE¯v€¹°Üß£ÿà!"j£ÜÛÓ;mˆwÀ#;€Þ2]UMT]À V÷ég û¶‚¼TÌ¿Êö xy­¿mÁ"ì6h±è/ú?p
+•ˆðpñ3¢ï3éŒöÀþ„wáü†H‘Sè°1MV½àoÛv=î¡ð©Ð™Uå‡­j“s×¹”KàÏuÄö›>zýÄ—^ÞHææàQ†÷E¯TRlÚ=¤fÛŠuEè*»èÃf¹êÁ¡f²Ç¿)&G ÎWÕ6«ÔÕà“ ‰éÉzD®Y#c¾Àr[õƒî<¾]Ø_dìnf2øk	ðÀXWb(Jðn‰èÒ¤ÃÛµ>s‚šÁo¦w°1¦–ãi”-ê žêg©­rGœ>õi¬ýÕ(³ÂsÖ.‡¶'ž€a²PYúßùÅ÷á77Õ© 8(8cÅ^ÛƒXÈd(ÍdÜüa»îð×Ú\9cgT€±¬	‚*”7%ÞÍ¨¬Úe”¾ó”ÀrH(d+PÊáAN´äÔ¾ˆ#ò%^l
+êûˆÜhå•Ü=Û#^ˆ­˜-Õ!ªÊ“w‡ } 2=¬N­R ;_`«=|¦|hÞ¢;‡ûñ„ó*ûpˆïväJ¶*÷•NüPË‹‘X‘…»‘ã®1ÎYéÐ£«l§7eøª±³é‚‹‰ª¥Â<°QŸ˜Ä¥dÔ7¨L&lBí3øCIRë²©C<yeãô’¸¢	Vî«ÔF«)%ˆ—Ïþ„m« NÓÿß‹fJË>i×CU˜,ä>úê³ô…µ§„u9.äðÜÿZ™ãµ.9ô@_ÁoÑpýÀç“W©=ß\_i¢LÚ®,þi'@_z»dZ¦øëÀO;c?ºA4é”î`CµSŒÆÖ#£RÛþÝüð–ïCÜ*^/9Ëÿ.ÿîË{q€±Ø›ÞçoÈÈ…ài‰òêGdþƒ+sâºÜV^A‹ML¸<§ÉÑÛY¸MkýåªÖj…ÁÜ¦†îËÉé¸»Ur‰'OžõŽF/c±²ZÊåƒ„âë‘¡æC H½{ƒÁŸs°
+P‰xœÒ¢åi·SîvQB«²P«éËJsú(EÉ|hµGºÄ Â$è=ÇOëˆ2º`3¼(™…EN|áœìµrôù¡**mÕäÏ7ÜÙËÎ<}çéøØí‹Mãßg|¾0·¶®Ý³d2ù1\k’æÔ:û^å×º®<ÛrOÿŸ±hßÂî•ÙIÅ3Íj;6û4EÝL9LA¡¥U®+Yrz‘„[½KaÑ71‚ŒÞ…^°ÒãQEÅ7–r¾8«2¼Ò‚)ÐçEeúzµG2[Ê< Üêa%.Þ êæ5g¶L4ÂŸ¿ÚÄÕ±¾[£˜‹C±¶WÊ–GiÇ´ƒÓ2fÍÚ‡ÎÆ‚ûˆëwÿØ•
+ß!ïnlµªÒ™bGªúK&$èÖ.Žekiå—ÀšE*0@“SyÄúæÎA| ”ðÍØ÷Oëþ“s¬£Ã©.U;=D¦b?•”rÇæÔqë„'è5’ÕÍÒ‰PÎÝ8C;jD(^å-É7Ii•(„°yßÛ¼Ós"Ã»eº£*|ÚîÅÿS]A1MÍ¨f6–…»Ÿhc'Eüyøð6ç|”1Â¯6‚.…r³¯aªêìOXŸø`0ánÆ¥²0+ÐÛß þñó÷¸#¢rp³
+§­Ø}Ö—ê™ùÄÙ—™ªãuþ¥ŠúŠ®ÆÅ8‡=X¶¹X´¾vjÕÂÅ½çLs}Î¹ü‚ÿI£	íèYà“QJ…–bU'þè€/NŸh"µ¨ Ì)ø0Ú®Ù²:É'·ÇÍ‚Çh‰÷}¿‘n.[P?£ñ°2ÑcV2Ejéæ'ßO®²7ú'«oô¦O¹j]Œ;è@t\—CÁ—W`•’æFÐœˆb©ÓAÊä)fªídÅˆtU i….Ü`.=uŸä\pçyCwSb½)
+ê€+±HZ»}Üxb”LîáÈv—Â_²_BÌ|Ka¨:ö‰¶åþ‘öpmÂiñE,O×Ë4¼{‹4[×Ê88ëHœ§,S#ï¹Žÿ† Ñ Nx&ðAVÒµŸÝ·‘Mu”Üþó9\Êô£”¾NT¹9
+	ë„xü[rÙÞé$Ufå2$å F²Ñmeú¹Aùhoõ¡m¢(Ò¯ÈŠF”ñ¢>ñjš–¾ÌJZP4Ð,RB¢åæi0ŒVöª{Ëþ~§Î¯Æ»z .G½uI—Çf=RDÙ¯oŠà"Ã&…¶2ÙEbÈ^'ä½«ÖÒ9ø‚ýLË8m~’Áëñçái&j0þâ’;©84÷ó,.OÛ[Ôv„DcÖOVð‘ÆÃ ý™ B¡`©ã9k*´-®^^é0.Ï$ßÁÀaHo hÅCCâª—T£Û
+i `eqž’tPÀe {W	Ë"Æ`ÙGÙ×Ž.vyƒº¼Á5[å]œõ¢.(Ì­Ï¡cíæoóÃ’óŒ#ÙyWµ#.9ËNhƒÁW9¬lõ;¾í»„ÓÀ¶g;b.žóŠ¢ª®£Ž‚*	ºëä™ÕâNGv¯ŽõÄáw!˜ž•©®þôº„oiä]õVEáÅ­yÿowû¥®Ö®71*øë¦UáTq€P˜@
+Ô¹m[õÁÀ&•H¢·ö”˜A~þ*èâä B"¬—ôMúx`öW8Îå©rÖÑíû¢î!­ð¿÷ñÓ÷T>‰¤(¹ ü;)]óÔ;‘)€°Üz¡È‘_û`5ïÇ­HMC=	uÎøš„±ûjõf““f¿¯¿Ë5gzùÿÌDŸH{ë³ÐKºÝ™Fª àäßlªÞ›È2SmÂyT´lcÚJ]&‡‘×¸¯).ú34Ü¿­ Nvì*[å<0Û¨ó,y›’ŽôÈíébdæãc%Žþ+œH?- •Û¹{_‚‹‰ç]…àÉ“¥¶èÃ›§®®‰»æ¯Up—o{`€Éxÿ†åþÃ¼/ó½@Ú‘JC~Â}{FÐ#O²"Ó]ãùDþíJãô6ô#¨†€$	»ÓÃfisæBA*F·ü~øâkzÇÎr)ºøÖø5ïžq×ò†Œéš­+©!ózáÁ&c•…}(#8{Å¥Ö4eY’_|T¡Ô¾ÚÓÚ1˜ÊêIF°Óv2/ã Ÿ¥üa@I´ú—Š§±bµ€õ¤6¯oÊ)Û¯§Üò[!UP3Ü¥KZ•,2¸^OqT˜#
+¨‡‘ã;ÜlIbKÜ1žvÈ|€ŒBêÀ²,LGy/°»¸e„˜©5á8>¼w–Ž›‡e+î†2Ö+Ø|ïèË’AI,˜x¬\ªÚsv0éÈ<1»&«y>:
+l\¢éº\¥£¯L>ž‹!Z6ðŽåßË×â ‘åªãï12;ò]Þ9Â™h†Ç%’˜dg›ýzCþÉQSí˜ºVmk€+K~Xü4RöÜÝ­ÑLOÎEÚ7ÞÛIÝ”Ê#‘ÛwQØq_Lô±0|æåïã§¶.œ¥âó×¨	écÙÔì{Ñ6Ê¯ú/F¥ˆüí!>ÃJ*”S¶¾Ñl›1þ`]ÓTåtòÒseÒ;ŸwUð3,ecxˆÈ„º²5ä>’`îã[½1¹Œœ³ƒ€¯Î1ü…µÅ+ÇõâqF…Pþ¹¢Bnô©´ÃùBv1R¿þ{éh:SýZÊ¼iG;lè£ñ ©tÞ¯—Ö»Ó·V—²Â¯ßóLŒ—›Ænf¢vˆÃ1,ÛFgJZX¨ÿ¿ª[èkf±<ê„4áMÈ¨•a»"Ä\ zW?0,þõéÞÍÇÈÑ®“mw ÐÝÌ&âÏSXºa¸£Ù¢XÎwž-‘
+'»Þ™žŠš>QlÐš”£¾/¨~ë(Ÿ‡ÊU.÷ÀÅªPzXó®7îšµcnPFmç\J¥~.ýôåÂ©{x!#?¯Ð"˜¡ô K#Õ§D·‡Ü|‰xÝWfehqj
+Æ¾_œ1ƒ¢Uã~Ìå±›™‘®{ZŒæÆ@ë¡¤‡ed£1z›kLÈÎžýÓ¾0LsØuò]mñJë ,ŒIôÊbëté!®&_#^	b^Úéß©E@#E4²:uÃn2éµ¸Üéez%ºÎéÂ·OË¯ÕèLöÊ¨ñ†áÇ-0AZoªÒŒ/a¯Ž÷•Än%åî}ÜZh+*Ê9p„ãc3¢IÇ×¤WÉ¬N(!=] ]Ä§l1ä¥çÖeB|,(ZÔ¶bH¤fÆA¸B]è²Ñp¯ ›‰Š’Š«Ò]b·ÿôL*5Ü6ò!ÿk…èìáÎ¼?“úV`±‡aÜ}Jd­™
+ÙøœAÐýÕ¶DCÈäjšNlG(ÿÁÃ!Kâ…-[TÃy¢Z˜sÞÏ™\*|pÌž(ê(16›9_þÞßzž˜¤mq¼—RÍþÀ÷…WY€OUÏ:ÒÃËÐ–ö&c*›ÏkÕY0Åñ‘® ÃÝyCÄoÅ 4q¸P|4]â~ÛàyÊGË(©+Nô˜bªÞûi]Àm€Êk<ýÀÃA{(ÄŠ^pi"Ãv;ðº/Y_¢÷8iònÑ¨@û.'å×f*v±ÔŸ(×¥Ãä(%år	baulžñ´Û©eÒóðªoŽÞœ‹ð££AGå›^8	bìØ«wIZè-à2®Xó’ý °¢î0KÇÍ^_¯ƒ«¥¥L›QpYÅVqFY†ÆH‹I8¯d ¬í¹	]Ðu7›HðF>Jƒõ©€»Œ·Û§·¶Íˆ]²c§'–žÊg¾=×áâ}«$	k	†[‘v+Èç|üïœç$ÙñÐ‡‡FjjÁ³@7~L¹*õEÐiYÎ¡›ü!n»n±ÃÁ Mô½p”%Öãç¾œpH¯' ~L•"â2HÊAR›…Ën‰Ž“1”A™›²§öA—c8‰òyy‘µg#iø.'”yEnÖ¶,GÂåÓWÖVÃÕBqõ°þÊKa®·-§QÐÂÈn7ÈQ=­‰‚¡€<Lê—Z&n¤ÚÈ bÔýl|Æ|ätåÆJñÎp·Ñ™÷	ý Ší«‡*¥pÜ	š[ˆìÒWi_nÊ^Êcy#oØ¶Û…_;kQe[“>Û7RUP@½ØÝ×kË”®¿ò×†`)çTë½nÖFFþæ»÷Ê£}æ×Í×ªz^åš  ôžÁQ¢ñjY¢7¹d
+ iyãäÉg `êÿùø!8ðžE±î s6+sG }P`à0LëCþÎ;`z€u1ânAL7{‚j.¸mš[ÌÈ}l™ñ2±H[ôî&Ñ±ýgpx­ƒ_ä§ç¨UºODŸØÔmóÅ&Ä×^´:Âä^?(‰ÚÌ-Ü1ð<®Lá•ƒ£^%îÑúê×²,†	^Ý£Ý ªúÚ©Ø^óšÒë/}Æ0êNÒ£…•µÌçòmvØ”C¬¯†]¿‹:Þx˜ÛÇRÇMÆÞLÕô§¯ï%é+n<^ê„Óf3¢g–Š_íëƒ(|Ú 8@u1/$ø¾YÛÛpØ›ÏB’Ìõ«ÐLàÒkÁá[$…Dv7§JS‰Y†«—€§w±—`'
+ÎŽ¾Æs¥ˆGæÿû÷ÎÃWÎhÂ @QñUZXìt_T& PùEêïsÀ<¸K{;é–ŠšÝƒÞÙ.GïE=Vä\îù è8©ÈÏÞÜe]"k÷#–ùpYÍ/9¬š¼Ý³4QúÒ'%¿©øhÕÉNTU_¶õÍuXbÇ´;Ž]Ú´x=U‹nïNÈ=È¸Mr“ø~ÅÅ4Î×óå¶Ý¨¢~¢>°Š ‹e	3½µ··ÎÓíN¢{JJªÆ»!–ÙÀB†¬*yFj|†œÌ˜öUT®T’ásða/bfz&]Â¹
+žbÓze”Iv1Ç;óLÔüš–DYÂ?Ãg^ñÕª
+Dñ·yaÉ¬P?ž±Ê@‘m^7ikátI±öŸ²˜œ'ÚûUZP1‹-génc¿BsüìZçk)Æ³Ñ![àÄ<•ÿfU‰àE™–RfïC¿.ar/tÀñR åÀÐ%W>¥w{?J·¸9t5ÜlïÔ-,ûÙñh–‡‡æ¶®”ùK<§¢’šÝcMPõŠ’…ßc²fÈ¾îaš¿.¹åMY²!ûoröéTº ëùÔÑxì_R•Ÿù³q=«qþó~þS:åÖ|¦E‰GªÇ£©Þ›ŒÙû6tc¿²)
+{^)òVnNß¦j–¨×øL†Î‚+)a¼J
+u)ôŽÄå6!š¢”`»\]ªhÑíô)8Cˆ`?"ÐÃV‚ Ð}Ù+ˆ¾pÀµýL³¬˜XüpAvÔâ©]šïnÇ6Œ~w„•P.ó¨Íp+úwÖ‚à„§‘î^Íâ;ðÀzP4s*UºV>«i÷|oí‘³À\ÀÆÑ\¬v<V‡*ÇÉ¤_¢¢OJM†9YPK<]Ó–[òB]êw·“™.ð¦-7d¤šÏ;K uöš WÍ{©D!;êÅÞŒ‹ÐqÛÅG¡[+ 	ŽïB±f?…”ÈKR¶ä!èô9Ú”@+¨5Éñï>uG ¬P”¸a°ËÊG°#ÙŸqõ›³‡.jÍéòbNìB~ú¼Žª*#KBþBÐ×í¼^äýŸE^ÿŒÕ…WœcíŠLìÀù@ž1îò2‹k1ÙéÐäè•¥5Py-¢Úÿêõ°;âƒÏ Ë¬i²ÃEÐ
+SNss”ÐçŒ¹®¼õ
+|[¤Fcs/(§Tµ .r_!‹?ZÑKÉåž5œÂ|³UÄ]¶µùko‡ŒlÄÏíÜdEëFYˆO.ÜÑ¡›¦ýµyK4Û¶“¬V©Í»dúÌ•$	~Àì Äo,Õ˜oÆÆÉèÅ©¢‡Õ$}ò¤&²Mï”:GöH—Ð_ËÄuIÁü
+²B¸H‰ÞH‹E,xÖ:ƒUˆ>âÛr«º¢B<N¾ÏäY¸ýÃ+±À­Fßªþ/Ž¾—ÿ-WÛ«È©ÁÇçœÑ•ds;.À’ô[õºÕ¯Þ¾œÂH±ÕN‘UÀ‹ÉüJM‰™Bs.! °QÂJŽê<©µŽ¥i“Ù3*U…ë•§ãÇ §Ö¼ã‚Å›ÿ’aëóÂ§|ïhÌ­Œ¿tÌAêwXŸLO@	18Úï¯ÊÕÄ¶÷Ö1>ë`•j@t× ¶—±sb¤Bç1:Þ Ò¹ÆçººkÈK—àÐ»v;ýêc²HËr/,i×Zä†šÈœÎ‹K‰Öê,¡ UsÕ)µKxò9Üõ²én'@¢§=‹Tê ÙþÕvƒ†þ!¾gõr`ÿu¤Ñsq»…ž`IZD¨ø°Í’lÙçMŸÀ¢û$‚B¼@¢çÉ)U÷Æ¡ BCm#ÞlÒêg­´Û¼ž>£H $ÄŒÏÔª»28×q`ºj¥~U¸e>Èy•?ýE`feÝ¬Ú1YV¡†ŒÛ[!xZÄ„ªßéeˆØ¤†š#wÉs6+SF…Ò…æžLÿ ‚}F¹œ{ÐãÍIÊLm;åAƒ;
+V´ˆåùm3ŸQ2¥/]©h+þ¡ù&nÑòä~è«F`õIoOL5Ö›ÎÛÖÕÉoC·¸J+TÐn­Óì£}çÂBÏôëéÓÍˆ„qþ$ÍG}TÙB›ˆüÕ›¼Òl	4dK‚1bs™A{9º¨¼ûµéçU‘åHÔúhtt¼«£¤Y×ÓòiüÙ;uL×»)Ü›ìÒcËðc/^ûª9Èß¢±»™´ )AýFÝ`I¦W*†/nxø¨ ×[ƒUbØË¯‡…¾Ç
